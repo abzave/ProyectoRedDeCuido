@@ -121,8 +121,10 @@ create table Categoria(
 
 create table CategoriaXPersonal(
 	id int primary key not null IDENTITY(0, 1),
+	pago money not null default 0,
 	idCategoria smallint foreign key references Categoria not null,
-	idPersonal int foreign key references Personal not null
+	idPersonal int foreign key references Personal not null,
+	check (pago >= 0)
 )
 
 create table EstudioXPersonal(
