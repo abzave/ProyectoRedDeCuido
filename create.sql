@@ -12,16 +12,16 @@ create table Estudio(
 	check (descripcion != '')
 );
 
-create table Canton(
-	idCanton tinyint primary key not null IDENTITY(0, 1),
-	nombre varchar(30) not null,
-	check (nombre != '')
-);
-
 create table Provincia(
 	idProvincia tinyint primary key not null IDENTITY(0, 1),
 	nombre varchar(30) not null unique,
-	idCanton tinyint foreign key references Canton not null,
+	check (nombre != '')
+);
+
+create table Canton(
+	idCanton tinyint primary key not null IDENTITY(0, 1),
+	nombre varchar(30) not null,
+	idProvincia tinyint foreign key references Provincia,
 	check (nombre != '')
 );
 
