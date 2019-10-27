@@ -1,3 +1,5 @@
+use RedDeCuido
+
 create procedure validarTipo
 @tipo as varchar(50),
 @errorMessage as varchar(50) = null
@@ -74,7 +76,6 @@ as begin
 	if not exists (select idGrado = @idGrado from Grado where ISNULL(idGrado, tipo) = ISNULL(@idGrado, @grado)) begin
 		set @errorMessage = 'El grado dado no existe';
 		raiserror(@errorMessage, 2, 2);
-		return;
 	end
 	return @errorMessage;
 end
@@ -122,6 +123,243 @@ as begin
 	return @errorMessage;
 end
 
+create procedure getProvincia
+@idProvincia as tinyint out,
+@provincia as varchar(50),
+@errorMessage as varchar(50) = null
+as begin
+	if not exists (select idProvincia = @idProvincia from Provincia where 
+			(@idProvincia is null or idProvincia = @idProvincia) 
+			and (@provincia is null or nombre = @provincia)) begin
+		set @errorMessage = 'La provincia dado no existe';
+		raiserror(@errorMessage, 2, 2);
+	end
+	return @errorMessage;
+end
+
+create procedure existeProvincia
+@nombre as varchar(50),
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from Provincia where nombre = @nombre) begin
+		set @errorMessage = 'Este nombre ya se encuentra registrado';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
+create procedure existeCentroDeAtencion
+@nombre as varchar(50),
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from CentroDeAtencion where nombre = @nombre) begin
+		set @errorMessage = 'Este nombre ya se encuentra registrado';
+		raiserror(@errorMessage, 2, 1);
+		return;
+	end
+end
+
+create procedure validarContenido
+@contenido as varchar(50),
+@errorMessage as varchar(50) = null
+as begin
+	if @contenido is null begin
+		set @errorMessage = 'El contenido no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+	end else if @contenido = '' begin
+		set @errorMessage = 'El contenido no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+	end
+	return @errorMessage;
+end
+
+create procedure existeComentario
+@contenido as varchar(50),
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from Comentario where contenido = @contenido) begin
+		set @errorMessage = 'Este contenido ya se encuentra registrado';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
+create procedure validarPuntuacion
+@puntuacion as varchar(50),
+@errorMessage as varchar(50) = null
+as begin
+	if @puntuacion is null begin
+		set @errorMessage = 'La puntuacion no puede ser nula';
+		raiserror(@errorMessage, 1, 1);
+	end else if @puntuacion < 0 begin
+		set @errorMessage = 'La puntuacion no puede ser negativa';
+		raiserror(@errorMessage, 1, 4);
+	end 
+	return @errorMessage;
+end
+
+create procedure validarComentarioOIdComentario
+@idComentario as tinyint,
+@comentario as varchar(30),
+@errorMessage as varchar(50) = null
+as begin
+	if @idComentario is null and @comentario is null begin
+		set @errorMessage = 'Debe ingresar la id del comentario o el texto';
+		raiserror(@errorMessage, 1, 3);
+	end else if @idComentario < 0 begin
+		set @errorMessage = 'El id debe ser positivo';
+		raiserror(@errorMessage, 1, 4);
+	end else if @comentario = '' begin
+		set @errorMessage = 'El comentario no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+	end
+	return @errorMessage;
+end
+
+create procedure existeCalificacion
+@puntuacion as tinyint,
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from Calificacion where puntuacion = @puntuacion) begin
+		set @errorMessage = 'Esta calificacion ya se encuentra registrado';
+		raiserror(@errorMessage, 2, 1);
+	end 
+	return @errorMessage;
+end
+
+create procedure getComentario
+@idComentario as tinyint out,
+@comentario as varchar(30),
+@errorMessage as varchar(50) = null
+as begin
+	if not exists (select idComentario = @idComentario from Comentario where 
+			(@idComentario is null or idComentario = @idComentario) and 
+			(@comentario is null or contenido = @comentario)) begin
+		set @errorMessage = 'El comentario dado no existe';
+		raiserror(@errorMessage, 2, 2);
+	end
+	return @errorMessage;
+end
+
+create procedure validarTiempo
+@tiempo as varchar(20),
+@errorMessage as varchar(50) = null
+as begin
+	if @tiempo is null begin
+		set @errorMessage = 'El tiempo no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+	end else if @tiempo = '' begin
+		set @errorMessage = 'El tiempo no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+	end
+	return @errorMessage;
+end
+
+create procedure existeHorario
+@tiempo as tinyint,
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from Horario where tiempo = @tiempo) begin
+		set @errorMessage = 'Este tiempo ya se encuentra registrado';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
+create procedure existeDia
+@nombre as varchar(50),
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from Dia where nombre = @nombre) begin
+		set @errorMessage = 'Este dia ya se encuentra registrado';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
+create procedure validarHora
+@hora as time(0),
+@errorMessage as varchar(50) = null
+as begin
+	if @hora is null begin
+		set @errorMessage = 'La hora no puede ser nula';
+		raiserror(@errorMessage, 1, 1);
+	end else if @hora < CONVERT(time, GETDATE()) begin
+		set @errorMessage = 'La hora no puede mayor al dia actual';
+		raiserror(@errorMessage, 1, 7);
+	end
+	return @errorMessage;
+end
+
+create procedure validarDiaOIdDia
+@idDia as tinyint = null,
+@dia as varchar(10) = null,
+@errorMessage as varchar(50) = null
+as begin
+	if @idDia is null and @dia is null begin
+		set @errorMessage = 'Debe ingresar la id del dia o el nombre';
+		raiserror(@errorMessage, 1, 3);
+	end else if @idDia is not null and @idDia < 0 begin
+		set @errorMessage = 'El id debe ser positivo';
+		raiserror(@errorMessage, 1, 4);
+	end else if @dia = '' begin
+		set @errorMessage = 'El dia no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+	end
+	return @errorMessage;
+end
+
+create procedure getDia
+@idDia as tinyint = null,
+@dia as varchar(10) = null,
+@errorMessage as varchar(50) = null
+as begin
+	if not exists (select idDia = @idDia from Dia where (@idDia is null or idDia = @idDia) 
+			and (@dia is null or nombre = @dia)) begin
+		set @errorMessage = 'El dia dado no existe';
+		raiserror(@errorMessage, 2, 2);
+	end
+	return @errorMessage;
+end
+
+create procedure existeJornada
+@horaInicio as time(0),
+@horaFin as time(0),
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from Jornada where horaInicio = @horaInicio and horaFin = @horaFin) begin
+		set @errorMessage = 'Esta jornada ya se encuentra registrada';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
+create procedure validarIntId
+@id as int = null,
+@errorMessage as varchar(50) = null
+as begin
+	if @id is null begin
+		set @errorMessage = 'El id no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+	end else if @id < 0 begin
+		set @errorMessage = 'El id no puede ser negativo';
+		raiserror(@errorMessage, 1, 4);
+	end 
+	return @errorMessage;
+end
+
+create procedure existeHorarioXJornada
+@idHorario as int,
+@idJornada as int,
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from HorarioXJornada where idHorario = @idHorario and idJornada = @idJornada) begin
+		set @errorMessage = 'Este horario ya se encuentra registrado con esta jornada';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
 create procedure createGrado
 @tipo as varchar(50),
 @errorMessage as varchar(50) = null out,
@@ -164,14 +402,8 @@ as begin
 	execute @errorMessage = validarNombre @nombre;
 	execute @errorMessage = validarProvinciaOIdProvincia @idProvincia, @provincia, @errorMessage;
 	execute @errorMessage = existeCanton @nombre, @errorMessage;
+	execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
 	if @errorMessage is not null begin return; end
-	if not exists (select idProvincia = @idProvincia from Provincia where 
-			(@idProvincia is null or idProvincia = @idProvincia) 
-			and (@provincia is null or nombre = @provincia)) begin
-		set @errorMessage = 'La provincia dado no existe';
-		raiserror(@errorMessage, 2, 2);
-		return;
-	end
 	begin transaction 
 	insert into Canton(nombre, idProvincia) values (@nombre, @idProvincia)
 	select @idCanton = @@IDENTITY
@@ -184,12 +416,8 @@ create procedure createProvincia
 @idProvincia as tinyint = null out
 as begin
 	execute @errorMessage = validarNombre @nombre;
+	execute @errorMessage = existeProvincia @nombre, @errorMessage;
 	if @errorMessage is not null begin return; end
-	if exists (select @@ERROR from Provincia where nombre = @nombre) begin
-		set @errorMessage = 'Este nombre ya se encuentra registrado';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end
 	begin transaction 
 	insert into Provincia(nombre) values (@nombre)
 	select @idProvincia = @@IDENTITY
@@ -205,18 +433,9 @@ create procedure createCentroDeAtencion
 as begin
 	execute @errorMessage = validarNombre @nombre;
 	execute @errorMessage = validarProvinciaOIdProvincia @idProvincia, @provincia, @errorMessage;
+	execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
+	execute @errorMessage = existeCentroDeAtencion @nombre, @errorMessage;
 	if @errorMessage is not null begin return; end
-	if exists (select @@ERROR from CentroDeAtencion where nombre = @nombre) begin
-		set @errorMessage = 'Este nombre ya se encuentra registrado';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end else if not exists (select idProvincia = @idProvincia from Provincia where 
-			(@idProvincia is null or idProvincia = @idProvincia) and 
-			(@provincia is null or nombre = @provincia)) begin
-		set @errorMessage = 'La provincia dado no existe';
-		raiserror(@errorMessage, 2, 2);
-		return;
-	end
 	begin transaction 
 	insert into CentroDeAtencion(nombre, idProvincia) values (@nombre, @idProvincia)
 	select @idCentro = @@IDENTITY
@@ -224,26 +443,15 @@ as begin
 end
 
 create procedure createComentario
-@contendio as varchar(50),
+@contenido as varchar(50),
 @errorMessage as varchar(50) = null out,
 @idComentario as int = null out
 as begin
-	if @contendio is null begin
-		set @errorMessage = 'El contenido no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @contendio = '' begin
-		set @errorMessage = 'El contenido no puede estar vacio';
-		raiserror(@errorMessage, 1, 2);
-		return;
-	end
-	if exists (select @@ERROR from Comentario where contenido = @contendio) begin
-		set @errorMessage = 'Este contenido ya se encuentra registrado';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end
+	execute @errorMessage = validarContenido @contenido;
+	execute @errorMessage = existeComentario @contenido, @errorMessage;
+	if @errorMessage is not null begin return; end
 	begin transaction 
-	insert into Comentario(contenido) values (@contendio)
+	insert into Comentario(contenido) values (@contenido)
 	select @idComentario = @@IDENTITY
 	commit transaction
 end
@@ -256,38 +464,12 @@ create procedure createCalificacion
 @errorMessage as varchar(50) = null out,
 @idCalificacion as int = null out
 as begin
-	if @puntuacion is null begin
-		set @errorMessage = 'La puntuacion no puede ser nula';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @puntuacion < 0 begin
-		set @errorMessage = 'La puntuacion no puede ser negativa';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idComentario is null and @comentario is null begin
-		set @errorMessage = 'Debe ingresar la id del comentario o el texto';
-		raiserror(@errorMessage, 1, 3);
-		return;
-	end else if @idComentario < 0 begin
-		set @errorMessage = 'El id debe ser positivo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @comentario = '' begin
-		set @errorMessage = 'El comentario no puede estar vacio';
-		raiserror(@errorMessage, 1, 2);
-		return;
-	end
-	if exists (select @@ERROR from Calificacion where puntuacion = @puntuacion) begin
-		set @errorMessage = 'Este nombre ya se encuentra registrado';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end else if not exists (select idComentario = @idComentario from Comentario where 
-			(@idComentario is null or idComentario = @idComentario) and 
-			(@comentario is null or contenido = @comentario)) begin
-		set @errorMessage = 'El comentario dado no existe';
-		raiserror(@errorMessage, 2, 2);
-		return;
-	end
+	execute @errorMessage = validarPuntuacion @puntuacion;
+	execute @errorMessage = validarComentarioOIdComentario @idComentario, @comentario, 
+															@errorMessage;
+	execute @errorMessage = existeCalificacion @puntuacion, @errorMessage;
+	execute @errorMessage = getComentario @idComentario, @comentario, @errorMessage;
+	if @errorMessage is not null begin return; end
 	begin transaction 
 	insert into Calificacion(puntuacion, idComentario) values (@puntuacion, @idComentario)
 	select @idCalificacion = @@IDENTITY
@@ -299,20 +481,9 @@ create procedure createHorario
 @errorMessage as varchar(50) = null out,
 @idHorario as int = null out
 as begin
-	if @tiempo is null begin
-		set @errorMessage = 'El tiempo no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @tiempo = '' begin
-		set @errorMessage = 'El tiempo no puede estar vacio';
-		raiserror(@errorMessage, 1, 2);
-		return;
-	end
-	if exists (select @@ERROR from Horario where tiempo = @tiempo) begin
-		set @errorMessage = 'Este tiempo ya se encuentra registrado';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end
+	execute @errorMessage = validarTiempo @tiempo;
+	execute @errorMessage = existeHorario @tiempo, @errorMessage;
+	if @errorMessage is not null begin return; end
 	begin transaction 
 	insert into Horario(tiempo) values (@tiempo)
 	select @idHorario = @@IDENTITY
@@ -325,12 +496,8 @@ create procedure createDia
 @idDia as tinyint = null out
 as begin
 	execute @errorMessage = validarNombre @nombre;
+	execute @errorMessage = existeDia @nombre, @errorMessage;
 	if @errorMessage is not null begin return; end
-	if exists (select @@ERROR from Dia where nombre = @nombre) begin
-		set @errorMessage = 'Este dia ya se encuentra registrado';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end
 	begin transaction 
 	insert into Dia(nombre) values (@nombre)
 	select @idDia = @@IDENTITY
@@ -345,37 +512,12 @@ create procedure createJornada
 @errorMessage as varchar(50) = null out,
 @idJornada as int = null out
 as begin
-	if @horaInicio is null begin
-		set @errorMessage = 'La hora de inicio no puede ser nula';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @horaFin is null begin
-		set @errorMessage = 'La hora de finalizacion no puede ser nula';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idDia is null and @dia is null begin
-		set @errorMessage = 'Debe ingresar la id del dia o el nombre';
-		raiserror(@errorMessage, 1, 3);
-		return;
-	end else if @idDia < 0 begin
-		set @errorMessage = 'El id debe ser positivo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @dia = '' begin
-		set @errorMessage = 'El dia no puede estar vacio';
-		raiserror(@errorMessage, 1, 2);
-		return;
-	end
-	if exists (select @@ERROR from Jornada where horaInicio = @horaInicio and horaFin = @horaFin) begin
-		set @errorMessage = 'Esta jornada ya se encuentra registrada';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end else if not exists (select idDia = @idDia from Dia where (@idDia is null or idDia = @idDia) 
-			and (@dia is null or nombre = @dia)) begin
-		set @errorMessage = 'El dia dado no existe';
-		raiserror(@errorMessage, 2, 2);
-		return;
-	end
+	execute @errorMessage = validarHora @horaInicio;
+	execute @errorMessage = validarHora @horaFin, @errorMessage;
+	execute @errorMessage = validarDiaOIdDia @idDia, @dia, @errorMessage;
+	execute @errorMessage = getDia @idDia, @dia, @errorMessage;
+	execute @errorMessage = existeJornada @horaInicio, @horaFin, @errorMessage;
+	if @errorMessage is not null begin return; end
 	begin transaction 
 	insert into Jornada(horaInicio, horaFin, idDia) values (@horaInicio, @horaFin, @idDia)
 	select @idJornada = @@IDENTITY
@@ -388,28 +530,10 @@ create procedure createHorarioXJornada
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
-	if @idHorario is null begin
-		set @errorMessage = 'El id del horario no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idHorario < 0 begin
-		set @errorMessage = 'El id del horario no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idJornada is null begin
-		set @errorMessage = 'El id de la jornada no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idJornada < 0 begin
-		set @errorMessage = 'El id de la jornada no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end
-	if exists (select @@ERROR from HorarioXJornada where idHorario = @idHorario and idJornada = @idJornada) begin
-		set @errorMessage = 'Este horario ya se encuentra registrado con esta jornada';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end
+	execute @errorMessage = validarIntId @idHorario;
+	execute @errorMessage = validarIntId @idJornada, @errorMessage;
+	execute @errorMessage = existeHorarioXJornada @idHorario, @idJornada, @errorMessage;
+	if @errorMessage is not null begin return; end
 	begin transaction 
 	insert into HorarioXJornada(idHorario, idJornada) values (@idHorario, @idJornada)
 	select @id = @@IDENTITY
@@ -484,6 +608,8 @@ create procedure createCliente
 as begin
 	execute @errorMessage = validarNombre @nombre;
 	execute @errorMessage = validarProvinciaOIdProvincia @idProvincia, @provincia, @errorMessage;
+	execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
+	execute @errorMessage = validarIntId @idUsuario, @errorMessage;
 	if @errorMessage is not null begin return; end
 	if @apellido is null begin
 		set @errorMessage = 'El apellido no puede ser nulo';
@@ -493,22 +619,8 @@ as begin
 		set @errorMessage = 'El apellido no puede estar vacio';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @idUsuario is null begin
-		set @errorMessage = 'Debe ingresar la id del usuario';
-		raiserror(@errorMessage, 1, 3);
-		return;
-	end else if @idUsuario < 0 begin
-		set @errorMessage = 'El id debe ser positivo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	if not exists (select idProvincia = @idProvincia from Provincia where 
-			(@idProvincia is null or idProvincia = @idProvincia) and 
-			(@provincia is null and nombre = @provincia)) begin
-		set @errorMessage = 'La provincia dada no existe';
-		raiserror(@errorMessage, 2, 2);
-		return;
-	end else if not exists (select idUsuario = @idUsuario from Usuario
+	if not exists (select idUsuario = @idUsuario from Usuario
 			where idUsuario = @idUsuario) begin
 		set @errorMessage = 'El usuario dado no existe';
 		raiserror(@errorMessage, 2, 2);
@@ -537,6 +649,7 @@ create procedure createPersonal
 @idPersonal as int = null out
 as begin
 	execute @errorMessage = validarNombre @nombre;
+	execute @errorMessage = validarIntId @idUsuario, @errorMessage;
 	if @errorMessage is not null begin return; end
 	if @apellido is null begin
 		set @errorMessage = 'El apellido no puede ser nulo';
@@ -568,14 +681,6 @@ as begin
 		return;
 	end else if @tiempo = '' begin
 		set @errorMessage = 'El tiempo no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idUsuario is null begin
-		set @errorMessage = 'Debe ingresar la id del usuario';
-		raiserror(@errorMessage, 1, 3);
-		return;
-	end else if @idUsuario < 0 begin
-		set @errorMessage = 'El id debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
@@ -615,23 +720,9 @@ create procedure createCalificacionXCliente
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
-	if @idCalificacion is null begin
-		set @errorMessage = 'El id de la calificacion no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idCalificacion < 0 begin
-		set @errorMessage = 'El id de la calificacion no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idCliente is null begin
-		set @errorMessage = 'El id del cliente no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idCliente < 0 begin
-		set @errorMessage = 'El id del cliente no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end
+	execute @errorMessage = validarIntId @idCalificacion;
+	execute @errorMessage = validarIntId @idCliente, @errorMessage;
+	if @errorMessage is not null begin return; end
 	if exists (select @@ERROR from CalificacionXCliente where idCalificacion = @idCalificacion 
 			and idCliente = @idCliente) begin
 		set @errorMessage = 'Esta calificacion ya se encuentra registrado con este cliente';
@@ -650,23 +741,9 @@ create procedure createCalificacionXPersonal
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
-	if @idCalificacion is null begin
-		set @errorMessage = 'El id de la calificacion no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idCalificacion < 0 begin
-		set @errorMessage = 'El id de la calificacion no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idPersonal is null begin
-		set @errorMessage = 'El id del personal no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idPersonal < 0 begin
-		set @errorMessage = 'El id del personal no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end
+	execute @errorMessage = validarIntId @idCalificacion;
+	execute @errorMessage = validarIntId @idPersonal, @errorMessage;
+	if @errorMessage is not null begin return; end
 	if exists (select @@ERROR from CalificacionXPersonal where idCalificacion = @idCalificacion 
 			and idPersonal = @idPersonal) begin
 		set @errorMessage = 'Esta calificacion ya se encuentra registrado con este empleado';
@@ -703,23 +780,9 @@ create procedure createCategoriaXPersonal
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
-	if @idCategoria is null begin
-		set @errorMessage = 'El id de la calificacion no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idCategoria < 0 begin
-		set @errorMessage = 'El id de la calificacion no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idPersonal is null begin
-		set @errorMessage = 'El id del personal no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idPersonal < 0 begin
-		set @errorMessage = 'El id del personal no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end
+	execute @errorMessage = validarIntId @idCategoria;
+	execute @errorMessage = validarIntId @idPersonal, @errorMessage;
+	if @errorMessage is not null begin return; end
 	if exists (select @@ERROR from CategoriaXPersonal where idCategoria = @idCategoria 
 			and idPersonal = @idPersonal) begin
 		set @errorMessage = 'Esta categoria ya se encuentra registrado con este empleado';
@@ -738,23 +801,9 @@ create procedure createEstudioXPersonal
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
-	if @idEstudio is null begin
-		set @errorMessage = 'El id de la calificacion no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idEstudio < 0 begin
-		set @errorMessage = 'El id de la calificacion no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idPersonal is null begin
-		set @errorMessage = 'El id del personal no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idPersonal < 0 begin
-		set @errorMessage = 'El id del personal no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end
+	execute @errorMessage = validarIntId @idEstudio;
+	execute @errorMessage = validarIntId @idPersonal, @errorMessage;
+	if @errorMessage is not null begin return; end
 	if exists (select @@ERROR from EstudioXPersonal where idEstudio = @idEstudio 
 			and idPersonal = @idPersonal) begin
 		set @errorMessage = 'Este estudio ya se encuentra registrado con este empleado';
@@ -831,6 +880,8 @@ create procedure createContratacion
 @errorMessage as varchar(50) = null out,
 @idContratacion as int = null out
 as begin
+	execute @errorMessage = validarIntId @idSolicitud;
+	if @errorMessage is not null begin return; end
 	if @monto is null begin
 		set @errorMessage = 'El monto no puede ser nulo';
 		raiserror(@errorMessage, 1, 1);
@@ -845,14 +896,6 @@ as begin
 		return;
 	end else if @fecha = '' begin
 		set @errorMessage = 'La fecha no puede estar vacia';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idSolicitud is null begin
-		set @errorMessage = 'El id de la solicitud no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idSolicitud < 0 begin
-		set @errorMessage = 'El id debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
@@ -880,6 +923,8 @@ create procedure createCategoriaXContratacion
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
+	execute @errorMessage = validarIntId @idContratacion;
+	if @errorMessage is not null begin return; end
 	if @precio is null begin
 		set @errorMessage = 'El precio no puede ser nulo';
 		raiserror(@errorMessage, 1, 1);
@@ -894,14 +939,6 @@ as begin
 		return;
 	end else if @idCategoria < 0 begin
 		set @errorMessage = 'El id de la categoria no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idContratacion is null begin
-		set @errorMessage = 'El id del contratacion no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idContratacion < 0 begin
-		set @errorMessage = 'El id del contratacion no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
@@ -1147,23 +1184,9 @@ create procedure createTratamientoXCliente
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
-	if @idTratamiento is null begin
-		set @errorMessage = 'El id del tratamiento no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idTratamiento < 0 begin
-		set @errorMessage = 'El id del tratamiento no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idCliente is null begin
-		set @errorMessage = 'El id del cliente no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idCliente < 0 begin
-		set @errorMessage = 'El id del cliente no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end
+	execute @errorMessage = validarIntId @idTratamiento;
+	execute @errorMessage = validarIntId @idCliente, @errorMessage;
+	if @errorMessage is not null begin return; end
 	if exists (select @@ERROR from TratamientoXCliente where idTratamiento = @idTratamiento 
 			and idCliente = @idCliente) begin
 		set @errorMessage = 'Este tratamiento ya se encuentra registrado con este cliente';
@@ -1236,20 +1259,14 @@ create procedure createEnfermedadXCliente
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
+	execute @errorMessage = validarIntId @idCliente;
+	if @errorMessage is not null begin return; end
 	if @idEnfermedad is null begin
 		set @errorMessage = 'El id del servicio no puede ser nulo';
 		raiserror(@errorMessage, 1, 1);
 		return;
 	end else if @idEnfermedad < 0 begin
 		set @errorMessage = 'El id del servicio no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idCliente is null begin
-		set @errorMessage = 'El id del centro no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idCliente < 0 begin
-		set @errorMessage = 'El id del centro no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
@@ -1264,5 +1281,3 @@ as begin
 	select @id = @@IDENTITY
 	commit transaction
 end
-
-use RedDeCuido
