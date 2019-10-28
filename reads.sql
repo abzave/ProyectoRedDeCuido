@@ -1,3 +1,5 @@
+use RedDeCuido
+
 create procedure readGrado
 @idGrado as tinyint = null,
 @tipo as varchar(50) = null,
@@ -1042,5 +1044,3 @@ as begin
 	(@idEnfermedad is null or idEnfermedad = @idEnfermedad) and 
 	(@idCliente is null or idCliente = @idCliente)
 end
-
-use RedDeCuido
