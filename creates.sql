@@ -744,6 +744,34 @@ as begin
 	return @errorMessage;
 end
 
+create procedure existeContratacion
+@monto as money,
+@fecha as datetime,
+@idSolicitud as int,
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from Contratacion where monto = @monto and fecha = @fecha 
+				and idSolicitud = @idSolicitud) begin
+		set @errorMessage = 'Esta solicitud ya se encuentra registrada';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
+create procedure validarSmallintId
+@id as smallint,
+@errorMessage as varchar(50) = null
+as begin
+	if @id is null begin
+		set @errorMessage = 'El id no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+	end else if @id < 0 begin
+		set @errorMessage = 'El id no puede ser negativo';
+		raiserror(@errorMessage, 1, 4);
+	end
+	return @errorMessage;
+end
+
 create procedure createGrado
 @tipo as varchar(50),
 @errorMessage as varchar(50) = null out,
@@ -1136,13 +1164,8 @@ as begin
 	execute @errorMessage = validarMonto @monto, @errorMessage;
 	execute @errorMessage = validarFecha @fecha, @errorMessage;
 	execute @errorMessage = getSolicitud @idSolicitud out, @errorMessage;
+	execute @errorMessage = existeContratacion @monto, @fecha, @idSolicitud, @errorMessage;
 	if @errorMessage is not null begin return; end
-	if exists (select @@ERROR from Contratacion where monto = @monto and fecha = @fecha 
-				and idSolicitud = @idSolicitud) begin
-		set @errorMessage = 'Esta solicitud ya se encuentra registrada';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end
 	begin transaction 
 	insert into Contratacion(monto, fecha, idSolicitud) values (@monto, @fecha, @idSolicitud)
 	select @idContratacion = @@IDENTITY
@@ -1159,16 +1182,9 @@ create procedure createCategoriaXContratacion
 as begin
 	execute @errorMessage = validarIntId @idContratacion;
 	execute @errorMessage = validarMonto @precio, @errorMessage;
+	execute @errorMessage = validarSmallintId @idCategoria, @errorMessage;
+	execute @errorMessage = validarIntId @idContratacion, @errorMessage;
 	if @errorMessage is not null begin return; end
-	if @idCategoria is null begin
-		set @errorMessage = 'El id de la categoria no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idCategoria < 0 begin
-		set @errorMessage = 'El id de la categoria no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end
 	if exists (select @@ERROR from CategoriaXContratacion where idCategoria = @idCategoria 
 			and idContratacion = @idCategoria) begin
 		set @errorMessage = 'Esta categoria ya se encuentra registrado con esta contratacion';
@@ -1413,15 +1429,8 @@ create procedure createServicioXCentro
 @errorMessage as varchar(50) = null out,
 @id as int = null out
 as begin
-	if @idServicio is null begin
-		set @errorMessage = 'El id del servicio no puede ser nulo';
-		raiserror(@errorMessage, 1, 1);
-		return;
-	end else if @idServicio < 0 begin
-		set @errorMessage = 'El id del servicio no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idCentro is null begin
+	execute @errorMessage = validarSmallintId @idServicio, @errorMessage;
+	if @idCentro is null begin
 		set @errorMessage = 'El id del centro no puede ser nulo';
 		raiserror(@errorMessage, 1, 1);
 		return;
