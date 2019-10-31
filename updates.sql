@@ -1,146 +1,171 @@
-use RedDeCuido
-
-create procedure readGrado
-@idGrado as tinyint = null,
+create procedure updateGrado
+@idGrado as tinyint,
 @tipo as varchar(50) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	execute @errorMessage = validarGradoOIdGrado @idGrado, @tipo;
+	execute @errorMessage = validarTipo @tipo;
 	if @errorMessage is not null begin return; end
-	select * from Grado where (@idGrado is null or idGrado = @idGrado) and 
-								(@tipo is null or tipo = @tipo)
+	if @idGrado is null begin
+		set @errorMessage = 'El id del grado no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+		return;
+	end else if @idGrado < 0 begin 
+		set @errorMessage = 'El id no puede ser negativo';
+		raiserror(@errorMessage, 1, 4);
+		return;
+	end 
+	if not exists (select @@ERROR from Grado where idGrado = @idGrado) begin
+		set @errorMessage = 'Este id no se encuentra registrado';
+		raiserror(@errorMessage, 2, 3);
+	end
+	update Grado set tipo = @tipo where idGrado = @idGrado
 end
 go
 
-create procedure readEstudio
-@idEstudio as smallint = null,
+create procedure updateEstudio
+@idEstudio as smallint,
 @descripcion as varchar(50) = null,
 @idGrado as tinyint = null,
 @grado as varchar(50) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idEstudio is null and @descripcion is null and @idGrado is null and @grado is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
+	if @idEstudio is null begin
+		set @errorMessage = 'El id del estudio no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+		return;
+	end else if @idEstudio < 0 begin
+		set @errorMessage = 'El id no puede ser negativo';
+		raiserror(@errorMessage, 1, 4);
 		return;
 	end else if @descripcion = '' begin
-		set @errorMessage = 'La descripción no puede estar vacia';
+		set @errorMessage = 'La descripcion no puede estar vacia';
+		raiserror(@errorMessage, 1, 2);
+		return;
+	end else if @idGrado is not null and @idGrado < 0 begin
+		set @errorMessage = 'El id no puede ser negativo';
+		raiserror(@errorMessage, 1, 4);
+		return;
+	end else if @grado = '' begin
+		set @errorMessage = 'El grado no puede estar vacio';
 		raiserror(@errorMessage, 1, 2);
 		return;
 	end
-	execute @errorMessage = validarGradoOIdGrado @idGrado, @grado, @errorMessage;
-	execute @errorMessage = getGrado @idGrado out, @grado, @errorMessage;
+	if not exists (select @@ERROR from Estudio where idEstudio = @idEstudio) begin
+		set @errorMessage = 'Este id no se encuentra registrado';
+		raiserror(@errorMessage, 2, 3);
+	end
+	execute @errorMessage = getGrado @idGrado out, @grado;
 	if @errorMessage is not null begin return; end
-	select * from Estudio where (@idEstudio is null or idEstudio = @idEstudio) and 
-	(@descripcion is null or descripcion = @descripcion) and 
-	(@idGrado is null or idGrado = @idGrado)
+	update Estudio set descripcion = ISNULL(@descripcion, descripcion), 
+	idGrado = ISNULL(@idGrado, idGrado) where idEstudio = @idEstudio
 end
 go
 
-create procedure readCanton
+create procedure updateCanton
 @idCanton as tinyint = null,
 @nombre as varchar(30) = null,
 @idProvincia as tinyint = null,
 @provincia as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idCanton is null and @nombre is null and @idProvincia is null and @provincia is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
+	if @idCanton is null begin
+		set @errorMessage = 'El id del estudio no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+		return;
+	end else if @idCanton < 0 begin
+		set @errorMessage = 'El id no puede ser negativo';
+		raiserror(@errorMessage, 1, 4);
 		return;
 	end else if @nombre = '' begin
-		set @errorMessage = 'El nombre no puede estar vacio';
+		set @errorMessage = 'El grado no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+		return;
+	end else if @idProvincia is not null and @idProvincia < 0 begin
+		set @errorMessage = 'El id no puede ser negativo';
+		raiserror(@errorMessage, 1, 4);
+		return;
+	end else if @provincia = '' begin
+		set @errorMessage = 'El grado no puede estar vacio';
 		raiserror(@errorMessage, 1, 2);
 		return;
 	end
-	execute @errorMessage = validarProvinciaOIdProvincia @idProvincia, @provincia, @errorMessage;
-	execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
-	if @errorMessage is not null begin return; end
-	select * from Canton where (@idCanton is null or idCanton = @idCanton) and 
-	(@nombre is null or nombre = @nombre) and (@idProvincia is null or idProvincia = @idProvincia)
+	if @idProvincia is not null or @provincia is not null begin
+		execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
+	end else if @errorMessage is not null begin return; end
+	update Canton set nombre = ISNULL(@nombre, nombre), 
+	idProvincia = ISNULL(@idProvincia, idProvincia) where idCanton = @idCanton
 end
 go
 
-create procedure readProvincia
-@idProvincia as tinyint = null,
+create procedure updateProvincia
+@idProvincia as tinyint,
 @nombre as varchar(50) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @nombre = '' begin
-		set @errorMessage = 'El nombre no puede estar vacio';
-		raiserror(@errorMessage, 1, 2);
-		return;
-	end
 	execute @errorMessage = validarProvinciaOIdProvincia @idProvincia, @nombre;
 	if @errorMessage is not null begin return; end
-	select * from Provincia where (@idProvincia is null or idProvincia = @idProvincia) and 
-	(@nombre is null or nombre = @nombre)
+	update Provincia set nombre = @nombre where idProvincia = @idProvincia
 end
 go
 
-create procedure readCentroDeAtencion
-@idCentro as tinyint = null,
+create procedure updateCentroDeAtencion
+@idCentro as tinyint,
 @nombre as varchar(30) = null,
 @idProvincia as tinyint = null,
 @provincia as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idCentro is null and @nombre is null and @idProvincia is null and @provincia is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
+	if @idCentro is null begin
+		set @errorMessage = 'El id del centro no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
 		return;
 	end else if @nombre = '' begin
 		set @errorMessage = 'El nombre no puede estar vacio';
 		raiserror(@errorMessage, 1, 2);
 		return;
-	end else if @idCentro is not null and @idCentro < 0 begin
-		set @errorMessage = 'La puntuacion no puede ser negativa';
+	end else if @idCentro < 0 begin
+		set @errorMessage = 'El id centro no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end
-	execute @errorMessage = validarProvinciaOIdProvincia @idProvincia, @provincia, @errorMessage;
-	execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
-	if @errorMessage is not null begin return; end
-	select * from CentroDeAtencion where (@idCentro is null or idCentro = @idCentro) and 
-	(@nombre is null or nombre = @nombre) and (@idProvincia is null or idProvincia = @idProvincia)
-end
-go
-
-create procedure readComentario
-@idComentario as int = null,
-@contenido as varchar(50) = null,
-@errorMessage as varchar(50) = null out
-as begin
-	if @idComentario is null and @contenido is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
+	end else if @idProvincia is not null and @idProvincia < 0 begin
+		set @errorMessage = 'La provincia no puede ser negativa';
+		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @contenido = '' begin
-		set @errorMessage = 'El contenido no puede estar vacio';
+	end else if @provincia = '' begin
+		set @errorMessage = 'La provincia no puede estar vacio';
 		raiserror(@errorMessage, 1, 2);
 		return;
-	end else if @idComentario is not null and @idComentario < 0 begin
-		set @errorMessage = 'El id no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	if @errorMessage is not null begin return; end
-	select * from Comentario where (@idComentario is null or idComentario = @idComentario) and
-	(@contenido is null or contenido = @contenido)
+	if @idProvincia is not null or @provincia is not null begin
+	execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
+	end else if @errorMessage is not null begin return; end
+	update CentroDeAtencion set nombre = ISNULL(@nombre, nombre), 
+	idProvincia = ISNULL(@idProvincia, idProvincia) where idCentro = @idCentro
 end
 go
 
-create procedure readCalificacion
-@idCalificacion as int = null,
-@puntuacion as tinyint,
+create procedure updateComentario
+@idComentario as int,
+@contenido as varchar(50),
+@errorMessage as varchar(50) = null out
+as begin
+	execute @errorMessage = validarIntId @idComentario;
+	execute @errorMessage = validarContenido @contenido, @errorMessage;
+	if @errorMessage is not null begin return; end
+	update Comentario set contenido = @contenido where idComentario = @idComentario
+end
+go
+
+create procedure updateCalificacion
+@idCalificacion as int,
+@puntuacion as tinyint = null,
 @idComentario as tinyint = null,
 @comentario as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idCalificacion is null and @puntuacion is null and @idComentario is null and 
-			@comentario is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
+	if @idCalificacion is null begin
+		set @errorMessage = 'El id de la calificacion no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
 		return;
 	end else if @puntuacion is not null and @puntuacion < 0 begin
 		set @errorMessage = 'La puntuacion no puede ser negativa';
@@ -163,69 +188,68 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Calificacion where (@idCalificacion is null or idCalificacion = @idCalificacion)
-	and (@puntuacion is null or puntuacion = @puntuacion) and 
-	(@idComentario is null or idComentario = @idComentario)
+	update Calificacion set puntuacion = ISNULL(@puntuacion, puntuacion), 
+	idComentario = ISNULL(@idComentario, idComentario) where idCalificacion = @idCalificacion
 end
 go
 
-create procedure readHorario
-@idHorario as int = null,
-@tiempo as varchar(20) = null,
+create procedure updateHorario
+@idHorario as int,
+@tiempo as varchar(20),
 @errorMessage as varchar(50) = null out
 as begin
-	if @tiempo = '' begin
+	if @idHorario is null begin
+		set @errorMessage = 'El id de la calificacion no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+		return;
+	end else if @tiempo is null begin
+		set @errorMessage = 'El tiempo no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
+		return;
+	end else if @tiempo = '' begin
 		set @errorMessage = 'El tiempo no puede estar vacio';
 		raiserror(@errorMessage, 1, 2);
 		return;
-	end else if @idHorario is not null and @idHorario < 0 begin
+	end else if @idHorario < 0 begin
 		set @errorMessage = 'El id debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
-	select * from Horario where (@idHorario is null or idHorario = @idHorario) and 
-	(@tiempo is null or tiempo = @tiempo)
+	update Horario set tiempo = @tiempo where idHorario = @idHorario
 end
 go
 
-create procedure readDia
-@idDia as tinyint = null,
+create procedure updateDia
+@idDia as tinyint,
 @nombre as varchar(10),
 @errorMessage as varchar(50) = null out
 as begin
-	if @idDia is null and @nombre is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
+	if @idDia is null begin
+		set @errorMessage = 'El id del dia no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
 		return;
-	end else if @idDia is not null and @idDia < 0 begin
+	end else if @idDia < 0 begin
 		set @errorMessage = 'El id no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @nombre = '' begin
-		set @errorMessage = 'El nombre no puede estar vacio';
-		raiserror(@errorMessage, 1, 2);
-		return;
 	end
+	execute @errorMessage = validarNombre @nombre;
 	if @errorMessage is not null begin return; end
-	select * from Dia where (@idDia is null or idDia = @idDia) and 
-	(@nombre is null or nombre = @nombre)
+	update Dia set nombre = @nombre where idDia = @idDia
 end
 go
 
-create procedure readJornada
-@idJornada as int = null,
+create procedure updateJornada
+@idJornada as int,
 @horaInicio as time(0) = null,
 @horaFin as time(0) = null,
 @idDia as tinyint = null,
 @dia as varchar(10) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idJornada is null and @horaInicio is null and @horaFin is null and @idDia is null 
-			and @dia is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @horaInicio is not null and @horaInicio > CONVERT(time, GETDATE()) begin
+	execute @errorMessage = validarIntId @idJornada;
+	if @errorMessage is not null begin return; end
+	if @horaInicio is not null and @horaInicio > CONVERT(time, GETDATE()) begin
 		set @errorMessage = 'La hora de inicio mayor al dia actual';
 		raiserror(@errorMessage, 1, 7);
 		return;
@@ -241,10 +265,6 @@ as begin
 		set @errorMessage = 'El dia no puede estar vacio';
 		raiserror(@errorMessage, 1, 2);
 		return;
-	end else if @idJornada is not null and @idJornada < 0 begin
-		set @errorMessage = 'El id debe ser positivo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
 	if (@idDia is not null or @dia is not null) and not exists (select idDia = @idDia from Dia where 
 			(@idDia is null or idDia = @idDia) and (@dia is null or nombre = @dia)) begin
@@ -252,18 +272,19 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Jornada where (@idJornada is null or idJornada = @idJornada) and 
-	(@horaInicio is null or horaInicio = @horaInicio) and (@horaFin is null or horaFin = @horaFin)
-	and (@idDia is null or idDia = @idDia)
+	update Jornada set horaInicio = ISNULL(@horaInicio, horaInicio), 
+	horaFin = ISNULL(@horaFin, horaFin), idDia = ISNULL(@idDia, idDia) where idJornada = @idJornada
 end
 go
 
-create procedure readHorarioXJornada
-@id as int = null,
+create procedure updateHorarioXJornada
+@id as int,
 @idHorario as int = null,
 @idJornada as int = null,
 @errorMessage as varchar(50) = null out
 as begin
+	execute @errorMessage = validarIntId @id;
+	if @errorMessage is not null begin return; end
 	if @idHorario is null and @idJornada is null and @id is null begin
 		set @errorMessage = 'Debe ingresar al menos un parametro';
 		raiserror(@errorMessage, 1, 6);
@@ -276,52 +297,34 @@ as begin
 		set @errorMessage = 'El id de la jornada no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @id is null and @id < 0 begin
-		set @errorMessage = 'El id de la jornada no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	select * from HorarioXJornada where (@id is null or id = @id) and 
-	(@idHorario is null or idHorario = @idHorario) and 
-	(@idJornada is null or idJornada = @idJornada)
+	update HorarioXJornada set idHorario = ISNULL(@idHorario, idHorario), 
+	idJornada = ISNULL(@idJornada, idJornada)
 end
 go
 
-create procedure readTipoUsuario
-@idTipo as int = null,
+create procedure updateTipoUsuario
+@idTipo as int,
 @tipo as varchar(30),
 @errorMessage as varchar(50) = null out
 as begin
-	if @idTipo is null and @tipo is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @idTipo is not null and @idTipo < 0 begin
-		set @errorMessage = 'El id de la jornada no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @tipo = '' begin
-		set @errorMessage = 'El dia no puede estar vacio';
-		raiserror(@errorMessage, 1, 2);
-		return;
-	end
-	select * from TipoUsuario where (@idTipo is null or idTipo = @idTipo) and 
-	(@tipo is null or tipo = @tipo)
+	execute @errorMessage = validarIntId @idTipo;
+	execute @errorMessage = validarTipo @tipo, @errorMessage;
+	if @errorMessage is not null begin return; end
+	update TipoUsuario set tipo = @tipo where idTipo = @idTipo
 end
 go
 
-create procedure readUsuario
-@idUsuario as int = null,
-@contrasenia as varchar(30),
+create procedure updateUsuario
+@idUsuario as int,
+@contrasenia as varchar(30) = null,
 @idTipo as int = null,
 @tipo as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idUsuario is null and @contrasenia is null and @idTipo is null or @tipo is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @contrasenia = '' begin
+	execute @errorMessage = validarIntId @idUsuario;
+	if @errorMessage is not null begin return; end
+	if @contrasenia = '' begin
 		set @errorMessage = 'La contraseña no puede estar vacia';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -341,13 +344,13 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Usuario where (@idUsuario is null or idUsuario = @idUsuario) and 
-	(@contrasenia is null or contrasenia = @contrasenia) and (@idTipo is null or idTipo = @idTipo)
+	update Usuario set contrasenia = ISNULL(@contrasenia, contrasenia), 
+	idTipo = ISNULL(@idTipo, idTipo)
 end
 go
 
-create procedure readCliente
-@idCliente as int = null,
+create procedure updateCliente
+@idCliente as int,
 @nombre as varchar(30) = null,
 @apellido as varchar(30) = null,
 @idProvincia as tinyint = null,
@@ -355,12 +358,8 @@ create procedure readCliente
 @idUsuario as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idCliente is null and @nombre is null and @apellido is null and @idProvincia is null 
-			and @provincia is null and @idUsuario is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @provincia is not null or @idProvincia is not null begin
+	execute @errorMessage = validarIntId @idCliente;
+	if @provincia is not null or @idProvincia is not null begin
 		execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
 	end
 	if @errorMessage is not null begin return; end
@@ -395,14 +394,13 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Cliente where (@idCliente is null or idCliente = @idCliente) and 
-	(@nombre is null or nombre = @nombre) and (@apellido is null or apellido = @apellido) and
-	(@idProvincia is null or idProvincia = @idProvincia) and 
-	(@idUsuario is null or idUsuario = @idUsuario)
+	update Cliente set nombre = ISNULL(@nombre, nombre), apellido = ISNULL(@apellido, apellido), 
+	idProvincia = ISNULL(@idProvincia, idProvincia), idUsuario = ISNULL(@idUsuario, idUsuario) 
+	where idCliente = @idCliente
 end
 go
 
-create procedure readPersonal
+create procedure updatePersonal
 @idPersonal as int = null,
 @nombre as varchar(30) = null,
 @apellido as varchar(30) = null,
@@ -413,13 +411,7 @@ create procedure readPersonal
 @idUsuario as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idPersonal is null and @nombre is null and @apellido is null and @idCentro is null and 
-			@nombreCentro is null and @idHorario is null and @tiempo is null and 
-			@idUsuario is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end
+	execute @errorMessage = validarIntId @idPersonal;
 	if @errorMessage is not null begin return; end
 	if @nombre = '' begin
 		set @errorMessage = 'El nombre no puede estar vacio';
@@ -470,24 +462,20 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Personal where (@idPersonal is null or idPersonal = @idPersonal) and 
-	(@nombre is null or nombre = @nombre) and (@apellido is null or apellido = @apellido) and
-	(@idCentro is null or idCentro = @idCentro) and (@idHorario is null or idHorario = @idHorario)
-	and (@idUsuario is null or idUsuario = @idUsuario)
+	update Personal set nombre = ISNULL(@nombre, nombre), apellido = ISNULL(@apellido, apellido),
+	idCentro = ISNULL(@idCentro, idCentro), idHorario = ISNULL(@idHorario, idHorario), 
+	idUsuario = ISNULL(@idUsuario, idUsuario) where idPersonal = @idPersonal
 end
-go
 
-create procedure readCalificacionXCliente
+create procedure updateCalificacionXCliente
 @id as int = null,
 @idCalificacion as int = null,
 @idCliente as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @id is null and @idCalificacion is null and @idCliente is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @idCalificacion is not null and @idCalificacion < 0 begin
+	execute @errorMessage = validarIntId @id;
+	if @errorMessage is not null begin return; end
+	if @idCalificacion is not null and @idCalificacion < 0 begin
 		set @errorMessage = 'El id de la calificacion no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -500,23 +488,19 @@ as begin
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
-	select * from CalificacionXCliente where (@id is null or id = @id) and 
-	(@idCalificacion is null or idCalificacion = @idCalificacion) and 
-	(@idCliente is null or idCliente = @idCliente)
+	update CalificacionXCliente set idCalificacion = @idCalificacion, idCliente = @idCalificacion
+	where id = @id
 end
-go
 
-create procedure readCalificacionXPersonal
+create procedure updateCalificacionXPersonal
 @id as int = null,
 @idCalificacion as int = null,
 @idPersonal as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idCalificacion is null and @idPersonal is null and @id is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @idCalificacion is not null and @idCalificacion < 0 begin
+	execute @errorMessage = validarIntId @id;
+	if @errorMessage is not null begin return; end
+	if @idCalificacion is not null and @idCalificacion < 0 begin
 		set @errorMessage = 'El id de la calificacion no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -529,22 +513,18 @@ as begin
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
-	select * from CalificacionXPersonal where (@id is null or id = @id) and 
-	(@idCalificacion is null or idCalificacion = @idCalificacion) and 
-	(@idPersonal is null or idPersonal = @idPersonal)
+	update CalificacionXPersonal set idCalificacion = @idCalificacion, idPersonal = @idPersonal
+	where id = @id
 end
-go
 
-create procedure readCategoria
+create procedure updateCategoria
 @idCategoria as int = null,
 @descripcion as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idCategoria is null and @descripcion is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @idCategoria is not null and @idCategoria < 0 begin
+	execute @errorMessage = validarIntId @idCategoria;
+	if @errorMessage is not null begin return; end
+	if @idCategoria is not null and @idCategoria < 0 begin
 		set @errorMessage = 'El id de la categoria no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -553,22 +533,18 @@ as begin
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
-	select * from Categoria where (@idCategoria is null or idCategoria = @idCategoria) and 
-	(@descripcion is null or descripcion = @descripcion)
+	update Categoria set descripcion = @descripcion where idCategoria = @idCategoria
 end
-go
 
-create procedure readCategoriaXPersonal
+create procedure updateCategoriaXPersonal
 @id as int = null,
 @idCategoria as int = null,
 @idPersonal as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @id is null and @idCategoria is null and @idPersonal is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @idCategoria is not null and @idCategoria < 0 begin
+	execute @errorMessage = validarIntId @id;
+	if @errorMessage is not null begin return; end
+	if @idCategoria is not null and @idCategoria < 0 begin
 		set @errorMessage = 'El id de la calificacion no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -576,28 +552,20 @@ as begin
 		set @errorMessage = 'El id del personal no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @id is not null and @id < 0 begin
-		set @errorMessage = 'El id del personal no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	select * from CategoriaXPersonal where (@id is null or id = @id) and 
-	(@idCategoria is null or idCategoria = @idCategoria) and 
-	(@idPersonal is null or idPersonal = @idPersonal)
+	update CategoriaXPersonal set idCategoria = @idCategoria, idPersonal = @idPersonal
+	where id = @id
 end
-go
 
-create procedure readEstudioXPersonal
-@id as int = null,
+create procedure updateEstudioXPersonal
+@id as int,
 @idEstudio as int = null,
 @idPersonal as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idEstudio is null and @id is null and @idPersonal is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @idEstudio is not null and @idEstudio < 0 begin
+	execute @errorMessage = validarIntId @id;
+	if @errorMessage is not null begin return; end
+	if @idEstudio is not null and @idEstudio < 0 begin
 		set @errorMessage = 'El id de la calificacion no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -605,18 +573,12 @@ as begin
 		set @errorMessage = 'El id del personal no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @id is not null and @id < 0 begin
-		set @errorMessage = 'El id no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	select * from EstudioXPersonal where (@id is null or id = @id) and 
-	(@idEstudio is null or idEstudio = @idEstudio) and
-	(@idPersonal is null or idPersonal = @idPersonal)
+	update EstudioXPersonal set idEstudio = ISNULL(@idEstudio, idEstudio), 
+	idPersonal = ISNULL(@idPersonal, idPersonal) where id = @id
 end
-go
 
-create procedure readSolicitud
+create procedure updateSolicitud
 @idSolicitud as int = null,
 @idPersonal as int = null,
 @nombrePersonal as varchar(75) = null,
@@ -624,12 +586,10 @@ create procedure readSolicitud
 @nombreCliente as varchar(75) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idPersonal is null and @nombrePersonal is null and @idSolicitud is null and 
-			@idCliente is null and @nombreCliente is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @nombrePersonal = '' begin
+	execute @errorMessage = validarIntId @idSolicitud;
+	execute @errorMessage = getPersonal @idPersonal, @nombrePersonal, @errorMessage;
+	if @errorMessage is not null begin return; end
+	if @nombrePersonal = '' begin
 		set @errorMessage = 'El nombre no puede estar vacio';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -645,19 +605,8 @@ as begin
 		set @errorMessage = 'El nombre no puede estar vacio';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @idSolicitud is not null and @idSolicitud < 0 begin
-		set @errorMessage = 'El id no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	if (@idPersonal is not null or @nombrePersonal is not null) and not exists 
-			(select idPersonal = @idPersonal from Personal where 
-			(@idPersonal is null or idPersonal = @idPersonal) and 
-			(@nombrePersonal is null and nombre = @nombrePersonal)) begin
-		set @errorMessage = 'El empleado dado no existe';
-		raiserror(@errorMessage, 2, 2);
-		return;
-	end else if (@idCliente is not null or @nombreCliente is not null) and not exists 
+	if (@idCliente is not null or @nombreCliente is not null) and not exists 
 			(select idCliente = @idCliente from Cliente where
 			(@idCliente is null or idCliente = @idCliente) and 
 			(@nombreCliente is null and nombre = @nombreCliente)) begin
@@ -665,24 +614,20 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Solicitud where (@idSolicitud is null or idSolicitud = @idSolicitud) and 
-	(@idPersonal is null or idPersonal = @idPersonal) and 
-	(@idCliente is null or idCliente = @idCliente)
+	update Solicitud set idPersonal = ISNULL(@idPersonal, idPersonal), 
+	idCliente = ISNULL(@idCliente, idCliente) where idSolicitud = @idSolicitud
 end
-go
 
-create procedure readContratacion
+create procedure updateContratacion
 @idContratacion as int = null,
 @monto as money = null,
 @fecha as datetime = null,
 @idSolicitud as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idContratacion is null and @monto is null and @fecha is null and @idSolicitud is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @monto is not null and @monto < 0 begin
+	execute @errorMessage = validarIntId @idContratacion;
+	if @errorMessage is not null begin return; end
+	if @monto is not null and @monto < 0 begin
 		set @errorMessage = 'El monto debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -694,10 +639,6 @@ as begin
 		set @errorMessage = 'El id debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @idContratacion is not null and @idContratacion < 0 begin
-		set @errorMessage = 'El id debe ser positivo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
 	if @idSolicitud is not null and not exists 
 		(select idSolicitud = @idSolicitud from Solicitud where idSolicitud = @idSolicitud) begin
@@ -705,24 +646,20 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Contratacion where (@idContratacion is null or idContratacion = @idContratacion)
-	and (@monto is null or monto = @monto) and (@fecha is null or fecha = @fecha) and 
-	(@idSolicitud is null or idSolicitud = @idSolicitud)
+	update Contratacion set monto = ISNULL(@monto, monto), fecha = ISNULL(@fecha, fecha), 
+	idSolicitud = ISNULL(@idSolicitud, idSolicitud) where idContratacion = @idContratacion
 end
-go
 
-create procedure readCategoriaXContratacion
+create procedure updateCategoriaXContratacion
 @id as int = null,
 @precio as money = null,
 @idCategoria as smallint = null,
 @idContratacion as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @precio is null and @id is null and @idCategoria is null and @idContratacion is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @precio is not null and @precio < 0 begin
+	execute @errorMessage = validarIntId @id;
+	if @errorMessage is not null begin return; end
+	if @precio is not null and @precio < 0 begin
 		set @errorMessage = 'El precio no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -735,26 +672,21 @@ as begin
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
-	select * from CategoriaXContratacion where (@id is null or id = @id) and 
-	(@precio is null or precio = @precio) and (@idCategoria is null or idCategoria = @idCategoria)
-	and (@idContratacion is null or idContratacion = @idContratacion)
+	update CategoriaXContratacion set precio = ISNULL(@precio, precio), 
+	idCategoria = ISNULL(@idCategoria, idCategoria), 
+	idContratacion = ISNULL(@idContratacion, idContratacion) where id = @id
 end
-go
 
-create procedure readPuesto
+create procedure updatePuesto
 @idPuesto as int = null,
 @nombre as varchar(50) = null,
 @idPersonal as int = null,
 @nombrePersonal as varchar(75) = null,
 @errorMessage as varchar(50) = null out
 as begin
+	execute @errorMessage = validarIntId @idPuesto;
 	if @errorMessage is not null begin return; end
-	if @idPersonal is null and @nombrePersonal is null and @idPuesto is null and 
-			@nombre is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @idPersonal is not null and @idPersonal < 0 begin
+	if @idPersonal is not null and @idPersonal < 0 begin
 		set @errorMessage = 'El id del empleado no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -766,10 +698,6 @@ as begin
 		set @errorMessage = 'El nombre no puede estar vacio';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @idPuesto is not null and @idPuesto < 0 begin
-		set @errorMessage = 'El id del puesto no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
 	if (@idPersonal is not null or @nombrePersonal is not null) and not exists 
 			(select idPersonal = @idPersonal from Personal where 
@@ -779,12 +707,11 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Puesto where (@idPuesto is null or idPuesto = @idPuesto) and 
-	(@nombre is null or nombre = @nombre) and (@idPersonal is null or idPersonal = @idPersonal)
+	update Puesto set nombre = ISNULL(@nombre, nombre), 
+	idPersonal = ISNULL(@idPersonal, idPersonal) where idPuesto = @idPuesto
 end
-go
 
-create procedure readPago
+create procedure updatePago
 @idPago as int = null,
 @fecha as datetime = null,
 @monto as money = null,
@@ -792,12 +719,8 @@ create procedure readPago
 @nombrePersonal as varchar(75) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idPago is null and @fecha is null and @monto is null and @idPersonal is null and 
-			@nombrePersonal is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end
+	execute @errorMessage = validarIntId @idPago;
+	if @errorMessage is not null begin return; end
 	if @fecha = '' begin
 		set @errorMessage = 'La fecha no puede estar vacio';
 		raiserror(@errorMessage, 1, 4);
@@ -814,10 +737,6 @@ as begin
 		set @errorMessage = 'El nombre no puede estar vacio';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @idPago is not null and @idPago < 0 begin
-		set @errorMessage = 'El id del paggo no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
 	if (@idPersonal is not null or @nombrePersonal is not null) and not exists 
 			(select idPersonal = @idPersonal from Personal where 
@@ -827,49 +746,39 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Pago where (@idPago is null or idPago = @idPago) and 
-	(@fecha is null or fecha = @fecha) and (@monto is null or monto = @monto) and 
-	(@idPersonal is null or idPersonal = @idPersonal)
+	update Pago set fecha = ISNULL(@fecha, fecha), monto = ISNULL(@monto, monto), 
+	idPersonal = ISNULL(@idPersonal, idPersonal) where idPago = @idPago
 end
-go
 
-create procedure readActividad
+create procedure updateActividad
 @idActividad as tinyint = null,
 @descripcion as varchar(10) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idActividad is null and @descripcion is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
+	execute @errorMessage = validarDescripcion @descripcion;
+	if @errorMessage is not null begin return; end
+	if @idActividad is null begin
+		set @errorMessage = 'El id del dia no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
 		return;
-	end else if @idActividad is not null and @idActividad < 0 begin
+	end else if @idActividad < 0 begin
 		set @errorMessage = 'El id de la actividad no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @descripcion = '' begin
-		set @errorMessage = 'La descripcion no puede estar vacia';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	if @errorMessage is not null begin return; end
-	select * from Actividad where (@idActividad is null or idActividad = @idActividad) and 
-	(@descripcion is null or descripcion = @descripcion)
+	update Actividad set descripcion = ISNULL(@descripcion, descripcion) 
+	where idActividad = @idActividad
 end
-go
 
-create procedure readCorreo
+create procedure updateCorreo
 @idCorreo as int = null,
 @direccion as varchar(50) = null,
 @idUsuario as int = null,
 @nombreUsuario as varchar(75) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idCorreo is null and @direccion is null or @idUsuario is null or
-			@nombreUsuario is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end
+	execute @errorMessage = validarIntId @idCorreo;
+	if @errorMessage is not null begin return; end
 	if @direccion = '' begin
 		set @errorMessage = 'La direccion no puede estar vacia';
 		raiserror(@errorMessage, 1, 4);
@@ -894,49 +803,38 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Correo where (@idCorreo is null or idCorreo = @idCorreo) and 
-	(@direccion is null or direccion = @direccion) and (@idUsuario is null or idUsuario = @idUsuario)
+	update Correo set direccion = ISNULL(@direccion, direccion), 
+	idUsuario = ISNULL(@idUsuario, idUsuario) where idCorreo = @idCorreo
 end
-go
 
-create procedure readEnfermedad
+create procedure updateEnfermedad
 @idEnfermedad as smallint = null,
 @nombre as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idEnfermedad is null and @nombre is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
+	execute @errorMessage = validarNombre @nombre;
+	if @errorMessage is not null begin return; end
+	if @idEnfermedad is null begin
+		set @errorMessage = 'El id de la enfermedad no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
 		return;
-	end else if @idEnfermedad is not null and @idEnfermedad < 0 begin
+	end else if @idEnfermedad < 0 begin
 		set @errorMessage = 'El id de la enfermedad no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @nombre = '' begin
-		set @errorMessage = 'El nombre no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	if @errorMessage is not null begin return; end
-	select * from Enfermedad where (@idEnfermedad is null or idEnfermedad = @idEnfermedad) and 
-	(@nombre is null or nombre = @nombre)
+	update Enfermedad set nombre = @nombre where idEnfermedad = @idEnfermedad
 end
-go
 
-create procedure readTratamiento
-@idTratamiento as int = null,
+create procedure updateTratamiento
+@idTratamiento as int,
 @nombre as varchar(30) = null,
 @cantidad as smallint = null,
 @idEnfermedad as smallint = null,
 @nombreEnfermedad as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idTratamiento is null and @nombre is null and @cantidad is null and @idEnfermedad is null 
-			and @nombreEnfermedad is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end
+	execute @errorMessage = validarIntId @idTratamiento;
 	if @errorMessage is not null begin return; end
 	if @cantidad is not null and @cantidad < 0 begin
 		set @errorMessage = 'La cantidad no puede ser negativa';
@@ -967,67 +865,55 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	select * from Tratamiento where (@idTratamiento is null or idTratamiento = @idTratamiento) and 
-	(@nombre is null or nombre = @nombre) and (@cantidad is null or cantidad = @cantidad) and
-	(@idEnfermedad is null or idEnfermedad = @idEnfermedad)
+	update Tratamiento set nombre = ISNULL(@nombre, nombre), 
+	cantidad = ISNULL(@cantidad, cantidad), idEnfermedad = ISNULL(@idEnfermedad, idEnfermedad)
+	where idTratamiendo = @idTratamiento
 end
-go
 
-create procedure readTratamientoXCliente
-@id as int = null,
+create procedure updateTratamientoXCliente
+@id as int,
 @idTratamiento as int = null,
 @idCliente as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idTratamiento is not null and @idTratamiento < 0 begin
-		set @errorMessage = 'El id del tratamiento no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idCliente is not null and @idCliente < 0 begin
+	execute @errorMessage = validarIntId @id;
+	if @errorMessage is not null begin return; end
+	if @idCliente is not null and @idCliente < 0 begin
 		set @errorMessage = 'El id del cliente no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @id is not null and @id < 0 begin
-		set @errorMessage = 'El id no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	select * from TratamientoXCliente where (@id is null or id = @id) and 
-	(@idTratamiento is null or idTratamiento = @idTratamiento) and 
-	(@idCliente is null or idCliente = @idCliente)
+	update TratamientoXCliente set idTratamiento = ISNULL(@idTratamiento, idTratamiento),
+	idCliente = ISNULL(@idCliente, idCliente) where id = @id
 end
-go
 
-create procedure readTipoServicio
+create procedure updateTipoServicio
 @idTipo as smallint = null,
 @descripcion as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idTipo is null and @descripcion is null begin
-		set @errorMessage = 'Debe ingresar al menos un parametro';
-		raiserror(@errorMessage, 1, 6);
-		return;
-	end else if @descripcion = '' begin
-		set @errorMessage = 'La descripcio no puede estar vacia';
-		raiserror(@errorMessage, 1, 4);
+	execute @errorMessage = validarDescripcion @descripcion;
+	if @errorMessage is not null begin return; end
+	if @idTipo is null begin
+		set @errorMessage = 'El id del servicio no puede ser nulo';
+		raiserror(@errorMessage, 1, 1);
 		return;
 	end else if @idTipo is not null and @idTipo < 0 begin
 		set @errorMessage = 'El id no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
-	if @errorMessage is not null begin return; end
-	select * from TipoServicio where (@idTipo is null or idServicio = @idTipo) and 
-	(@descripcion is null or descripcion = @descripcion)
+	update TipoServicio set descripcion = @descripcion where idTipo = @idTipo
 end
-go
 
-create procedure readServicioXCentro
-@id as int = null,
+create procedure updateServicioXCentro
+@id as int,
 @idServicio as smallint = null,
 @idCentro as smallint = null,
 @errorMessage as varchar(50) = null out
 as begin
+	execute @errorMessage = validarIntId @id;
+	if @errorMessage is not null begin return; end
 	if @idServicio is not null and @idServicio < 0 begin
 		set @errorMessage = 'El id del servicio no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
@@ -1036,28 +922,18 @@ as begin
 		set @errorMessage = 'El id del centro no puede ser negativo';
 		raiserror(@errorMessage, 1, 4);
 		return;
-	end else if @id is not null and @id < 0 begin
-		set @errorMessage = 'El id no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
 	end
-	select * from ServicioXCentro where (@id is null or id = @id) and 
-	(@idServicio is null or idServicio = @idServicio) and 
-	(@idCentro is null or idCentro = @idCentro)
+	update ServicioXCentro set idServicio = ISNULL(@idServicio, idServicio), 
+	idCentro = ISNULL(@idCentro, idCentro) where id = @id
 end
-go
 
-create procedure readEnfermedadXCliente
-@id as int = null,
+create procedure updateEnfermedadXCliente
+@id as int,
 @idEnfermedad as smallint = null,
 @idCliente as int = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @id is null and @idEnfermedad is null and @idCliente is null begin
-		set @errorMessage = 'El id del servicio no puede ser negativo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end
+	execute @errorMessage = validarIntId @id;
 	if @errorMessage is not null begin return; end
 	if @idEnfermedad is not null and @idEnfermedad < 0 begin
 		set @errorMessage = 'El id del servicio no puede ser negativo';
@@ -1072,8 +948,8 @@ as begin
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
-	select * from EnfermedadXCliente where (@id is null or id = @id) and 
-	(@idEnfermedad is null or idEnfermedad = @idEnfermedad) and 
-	(@idCliente is null or idCliente = @idCliente)
+	update EnfermedadXCliente set idEnfermedad = ISNULL(@idEnfermedad, idEnfermedad),
+	idCliente = ISNULL(@idCliente, idCliente) where id = @id
 end
-go
+
+use RedDeCuido
