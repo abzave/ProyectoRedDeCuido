@@ -10,6 +10,7 @@ as begin
 	select * from Grado where (@idGrado is null or idGrado = @idGrado) and 
 								(@tipo is null or tipo = @tipo)
 end
+go
 
 create procedure readEstudio
 @idEstudio as smallint = null,
@@ -34,6 +35,7 @@ as begin
 	(@descripcion is null or descripcion = @descripcion) and 
 	(@idGrado is null or idGrado = @idGrado)
 end
+go
 
 create procedure readCanton
 @idCanton as tinyint = null,
@@ -57,6 +59,7 @@ as begin
 	select * from Canton where (@idCanton is null or idCanton = @idCanton) and 
 	(@nombre is null or nombre = @nombre) and (@idProvincia is null or idProvincia = @idProvincia)
 end
+go
 
 create procedure readProvincia
 @idProvincia as tinyint = null,
@@ -73,6 +76,7 @@ as begin
 	select * from Provincia where (@idProvincia is null or idProvincia = @idProvincia) and 
 	(@nombre is null or nombre = @nombre)
 end
+go
 
 create procedure readCentroDeAtencion
 @idCentro as tinyint = null,
@@ -100,6 +104,7 @@ as begin
 	select * from CentroDeAtencion where (@idCentro is null or idCentro = @idCentro) and 
 	(@nombre is null or nombre = @nombre) and (@idProvincia is null or idProvincia = @idProvincia)
 end
+go
 
 create procedure readComentario
 @idComentario as int = null,
@@ -123,6 +128,7 @@ as begin
 	select * from Comentario where (@idComentario is null or idComentario = @idComentario) and
 	(@contenido is null or contenido = @contenido)
 end
+go
 
 create procedure readCalificacion
 @idCalificacion as int = null,
@@ -161,6 +167,7 @@ as begin
 	and (@puntuacion is null or puntuacion = @puntuacion) and 
 	(@idComentario is null or idComentario = @idComentario)
 end
+go
 
 create procedure readHorario
 @idHorario as int = null,
@@ -179,6 +186,7 @@ as begin
 	select * from Horario where (@idHorario is null or idHorario = @idHorario) and 
 	(@tiempo is null or tiempo = @tiempo)
 end
+go
 
 create procedure readDia
 @idDia as tinyint = null,
@@ -202,6 +210,7 @@ as begin
 	select * from Dia where (@idDia is null or idDia = @idDia) and 
 	(@nombre is null or nombre = @nombre)
 end
+go
 
 create procedure readJornada
 @idJornada as int = null,
@@ -247,6 +256,7 @@ as begin
 	(@horaInicio is null or horaInicio = @horaInicio) and (@horaFin is null or horaFin = @horaFin)
 	and (@idDia is null or idDia = @idDia)
 end
+go
 
 create procedure readHorarioXJornada
 @id as int = null,
@@ -275,6 +285,7 @@ as begin
 	(@idHorario is null or idHorario = @idHorario) and 
 	(@idJornada is null or idJornada = @idJornada)
 end
+go
 
 create procedure readTipoUsuario
 @idTipo as int = null,
@@ -297,6 +308,7 @@ as begin
 	select * from TipoUsuario where (@idTipo is null or idTipo = @idTipo) and 
 	(@tipo is null or tipo = @tipo)
 end
+go
 
 create procedure readUsuario
 @idUsuario as int = null,
@@ -332,6 +344,7 @@ as begin
 	select * from Usuario where (@idUsuario is null or idUsuario = @idUsuario) and 
 	(@contrasenia is null or contrasenia = @contrasenia) and (@idTipo is null or idTipo = @idTipo)
 end
+go
 
 create procedure readCliente
 @idCliente as int = null,
@@ -387,6 +400,7 @@ as begin
 	(@idProvincia is null or idProvincia = @idProvincia) and 
 	(@idUsuario is null or idUsuario = @idUsuario)
 end
+go
 
 create procedure readPersonal
 @idPersonal as int = null,
@@ -461,6 +475,7 @@ as begin
 	(@idCentro is null or idCentro = @idCentro) and (@idHorario is null or idHorario = @idHorario)
 	and (@idUsuario is null or idUsuario = @idUsuario)
 end
+go
 
 create procedure readCalificacionXCliente
 @id as int = null,
@@ -489,6 +504,7 @@ as begin
 	(@idCalificacion is null or idCalificacion = @idCalificacion) and 
 	(@idCliente is null or idCliente = @idCliente)
 end
+go
 
 create procedure readCalificacionXPersonal
 @id as int = null,
@@ -517,6 +533,7 @@ as begin
 	(@idCalificacion is null or idCalificacion = @idCalificacion) and 
 	(@idPersonal is null or idPersonal = @idPersonal)
 end
+go
 
 create procedure readCategoria
 @idCategoria as int = null,
@@ -539,6 +556,7 @@ as begin
 	select * from Categoria where (@idCategoria is null or idCategoria = @idCategoria) and 
 	(@descripcion is null or descripcion = @descripcion)
 end
+go
 
 create procedure readCategoriaXPersonal
 @id as int = null,
@@ -567,6 +585,7 @@ as begin
 	(@idCategoria is null or idCategoria = @idCategoria) and 
 	(@idPersonal is null or idPersonal = @idPersonal)
 end
+go
 
 create procedure readEstudioXPersonal
 @id as int = null,
@@ -595,6 +614,7 @@ as begin
 	(@idEstudio is null or idEstudio = @idEstudio) and
 	(@idPersonal is null or idPersonal = @idPersonal)
 end
+go
 
 create procedure readSolicitud
 @idSolicitud as int = null,
@@ -649,6 +669,7 @@ as begin
 	(@idPersonal is null or idPersonal = @idPersonal) and 
 	(@idCliente is null or idCliente = @idCliente)
 end
+go
 
 create procedure readContratacion
 @idContratacion as int = null,
@@ -688,6 +709,7 @@ as begin
 	and (@monto is null or monto = @monto) and (@fecha is null or fecha = @fecha) and 
 	(@idSolicitud is null or idSolicitud = @idSolicitud)
 end
+go
 
 create procedure readCategoriaXContratacion
 @id as int = null,
@@ -717,6 +739,7 @@ as begin
 	(@precio is null or precio = @precio) and (@idCategoria is null or idCategoria = @idCategoria)
 	and (@idContratacion is null or idContratacion = @idContratacion)
 end
+go
 
 create procedure readPuesto
 @idPuesto as int = null,
@@ -759,6 +782,7 @@ as begin
 	select * from Puesto where (@idPuesto is null or idPuesto = @idPuesto) and 
 	(@nombre is null or nombre = @nombre) and (@idPersonal is null or idPersonal = @idPersonal)
 end
+go
 
 create procedure readPago
 @idPago as int = null,
@@ -807,6 +831,7 @@ as begin
 	(@fecha is null or fecha = @fecha) and (@monto is null or monto = @monto) and 
 	(@idPersonal is null or idPersonal = @idPersonal)
 end
+go
 
 create procedure readActividad
 @idActividad as tinyint = null,
@@ -830,6 +855,7 @@ as begin
 	select * from Actividad where (@idActividad is null or idActividad = @idActividad) and 
 	(@descripcion is null or descripcion = @descripcion)
 end
+go
 
 create procedure readCorreo
 @idCorreo as int = null,
@@ -871,6 +897,7 @@ as begin
 	select * from Correo where (@idCorreo is null or idCorreo = @idCorreo) and 
 	(@direccion is null or direccion = @direccion) and (@idUsuario is null or idUsuario = @idUsuario)
 end
+go
 
 create procedure readEnfermedad
 @idEnfermedad as smallint = null,
@@ -894,6 +921,7 @@ as begin
 	select * from Enfermedad where (@idEnfermedad is null or idEnfermedad = @idEnfermedad) and 
 	(@nombre is null or nombre = @nombre)
 end
+go
 
 create procedure readTratamiento
 @idTratamiento as int = null,
@@ -943,6 +971,7 @@ as begin
 	(@nombre is null or nombre = @nombre) and (@cantidad is null or cantidad = @cantidad) and
 	(@idEnfermedad is null or idEnfermedad = @idEnfermedad)
 end
+go
 
 create procedure readTratamientoXCliente
 @id as int = null,
@@ -967,6 +996,7 @@ as begin
 	(@idTratamiento is null or idTratamiento = @idTratamiento) and 
 	(@idCliente is null or idCliente = @idCliente)
 end
+go
 
 create procedure readTipoServicio
 @idTipo as smallint = null,
@@ -990,6 +1020,7 @@ as begin
 	select * from TipoServicio where (@idTipo is null or idServicio = @idTipo) and 
 	(@descripcion is null or descripcion = @descripcion)
 end
+go
 
 create procedure readServicioXCentro
 @id as int = null,
@@ -1014,6 +1045,7 @@ as begin
 	(@idServicio is null or idServicio = @idServicio) and 
 	(@idCentro is null or idCentro = @idCentro)
 end
+go
 
 create procedure readEnfermedadXCliente
 @id as int = null,
@@ -1044,3 +1076,4 @@ as begin
 	(@idEnfermedad is null or idEnfermedad = @idEnfermedad) and 
 	(@idCliente is null or idCliente = @idCliente)
 end
+go
