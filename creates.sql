@@ -772,6 +772,30 @@ as begin
 	return @errorMessage;
 end
 
+create procedure existeCategoriaXContratacion
+@idCategoria as smallint,
+@idContratacion as int,
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from CategoriaXContratacion where idCategoria = @idCategoria 
+			and idContratacion = @idCategoria) begin
+		set @errorMessage = 'Esta categoria ya se encuentra registrado con esta contratacion';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
+create procedure existePuesto
+@nombre as varchar(50),
+@errorMessage as varchar(50) = null
+as begin
+	if exists (select @@ERROR from Puesto where nombre = @nombre) begin
+		set @errorMessage = 'Este puesto ya está registrado';
+		raiserror(@errorMessage, 2, 1);
+	end
+	return @errorMessage;
+end
+
 create procedure createGrado
 @tipo as varchar(50),
 @errorMessage as varchar(50) = null out,
@@ -1184,13 +1208,9 @@ as begin
 	execute @errorMessage = validarMonto @precio, @errorMessage;
 	execute @errorMessage = validarSmallintId @idCategoria, @errorMessage;
 	execute @errorMessage = validarIntId @idContratacion, @errorMessage;
+	execute @errorMessage = existeCategoriaXContratacion @idCategoria, @idContratacion, 
+														 @errorMessage;
 	if @errorMessage is not null begin return; end
-	if exists (select @@ERROR from CategoriaXContratacion where idCategoria = @idCategoria 
-			and idContratacion = @idCategoria) begin
-		set @errorMessage = 'Esta categoria ya se encuentra registrado con esta contratacion';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end
 	begin transaction 
 	insert into CategoriaXContratacion(precio, idCategoria, idContratacion) values 
 									(@precio, @idCategoria, @idContratacion)
@@ -1209,12 +1229,8 @@ as begin
 	execute @errorMessage = validarNombre @nombre;
 	execute @errorMessage = validarPersonalOIdPersonal @idPersonal, @nombrePersonal, @errorMessage;
 	execute @errorMessage = getPersonal @idPersonal out, @nombrePersonal, @errorMessage;
+	execute @errorMessage = existePuesto @nombre, @errorMessage;
 	if @errorMessage is not null begin return; end
-	if exists (select @@ERROR from Puesto where nombre = @nombre) begin
-		set @errorMessage = 'Este puesto ya está registrado';
-		raiserror(@errorMessage, 2, 1);
-		return;
-	end
 	begin transaction 
 	insert into Puesto(nombre, idPersonal) values (@nombre, @idPersonal)
 	select @idPuesto = @@IDENTITY
