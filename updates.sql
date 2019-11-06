@@ -1,3 +1,5 @@
+use RedDeCuido
+
 create procedure updateGrado
 @idGrado as tinyint,
 @tipo as varchar(50) = null,
@@ -317,15 +319,15 @@ go
 
 create procedure updateUsuario
 @idUsuario as int,
-@contrasenia as varchar(30) = null,
+@nombre as varchar(75) = null,
 @idTipo as int = null,
 @tipo as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
 	execute @errorMessage = validarIntId @idUsuario;
 	if @errorMessage is not null begin return; end
-	if @contrasenia = '' begin
-		set @errorMessage = 'La contraseña no puede estar vacia';
+	if @nombre = '' begin
+		set @errorMessage = 'El nombre no puede estar vacia';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end else if @idTipo is not null and @idTipo < 0 begin
@@ -344,18 +346,18 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	update Usuario set contrasenia = ISNULL(@contrasenia, contrasenia), 
+	update Usuario set nombre = ISNULL(@nombre, nombre), 
 	idTipo = ISNULL(@idTipo, idTipo)
 end
 go
 
 create procedure updateCliente
 @idCliente as int,
-@nombre as varchar(30) = null,
-@apellido as varchar(30) = null,
+@nombre as varchar(75) = null,
 @idProvincia as tinyint = null,
 @provincia as varchar(20) = null,
 @idUsuario as int = null,
+@baneado as bit = null,
 @errorMessage as varchar(50) = null out
 as begin
 	execute @errorMessage = validarIntId @idCliente;
@@ -363,11 +365,7 @@ as begin
 		execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
 	end
 	if @errorMessage is not null begin return; end
-	if @apellido = '' begin
-		set @errorMessage = 'El apellido no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idUsuario is not null and @idUsuario < 0 begin
+	if @idUsuario is not null and @idUsuario < 0 begin
 		set @errorMessage = 'El id debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -394,34 +392,25 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	update Cliente set nombre = ISNULL(@nombre, nombre), apellido = ISNULL(@apellido, apellido), 
-	idProvincia = ISNULL(@idProvincia, idProvincia), idUsuario = ISNULL(@idUsuario, idUsuario) 
+	update Cliente set idProvincia = ISNULL(@idProvincia, idProvincia), 
+	idUsuario = ISNULL(@idUsuario, idUsuario), baneado = ISNULL(@baneado, baneado)
 	where idCliente = @idCliente
 end
 go
 
 create procedure updatePersonal
 @idPersonal as int = null,
-@nombre as varchar(30) = null,
-@apellido as varchar(30) = null,
 @idCentro as smallint = null,
 @nombreCentro as varchar(30) = null,
 @idHorario as int = null,
 @tiempo as varchar(20) = null,
 @idUsuario as int = null,
+@disponibilidad as bit = null,
 @errorMessage as varchar(50) = null out
 as begin
 	execute @errorMessage = validarIntId @idPersonal;
 	if @errorMessage is not null begin return; end
-	if @nombre = '' begin
-		set @errorMessage = 'El nombre no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @apellido = '' begin
-		set @errorMessage = 'El apellido no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idCentro is not null and @idCentro < 0 begin
+	if @idCentro is not null and @idCentro < 0 begin
 		set @errorMessage = 'El id debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -462,10 +451,11 @@ as begin
 		raiserror(@errorMessage, 2, 2);
 		return;
 	end
-	update Personal set nombre = ISNULL(@nombre, nombre), apellido = ISNULL(@apellido, apellido),
-	idCentro = ISNULL(@idCentro, idCentro), idHorario = ISNULL(@idHorario, idHorario), 
-	idUsuario = ISNULL(@idUsuario, idUsuario) where idPersonal = @idPersonal
+	update Personal set idCentro = ISNULL(@idCentro, idCentro), 
+	idHorario = ISNULL(@idHorario, idHorario), idUsuario = ISNULL(@idUsuario, idUsuario), 
+	disponible = ISNULL(@disponibilidad, disponible) where idPersonal = @idPersonal
 end
+go
 
 create procedure updateCalificacionXCliente
 @id as int = null,
@@ -491,6 +481,7 @@ as begin
 	update CalificacionXCliente set idCalificacion = @idCalificacion, idCliente = @idCalificacion
 	where id = @id
 end
+go
 
 create procedure updateCalificacionXPersonal
 @id as int = null,
@@ -516,6 +507,7 @@ as begin
 	update CalificacionXPersonal set idCalificacion = @idCalificacion, idPersonal = @idPersonal
 	where id = @id
 end
+go
 
 create procedure updateCategoria
 @idCategoria as int = null,
@@ -535,6 +527,7 @@ as begin
 	end
 	update Categoria set descripcion = @descripcion where idCategoria = @idCategoria
 end
+go
 
 create procedure updateCategoriaXPersonal
 @id as int = null,
@@ -556,6 +549,7 @@ as begin
 	update CategoriaXPersonal set idCategoria = @idCategoria, idPersonal = @idPersonal
 	where id = @id
 end
+go
 
 create procedure updateEstudioXPersonal
 @id as int,
@@ -577,6 +571,7 @@ as begin
 	update EstudioXPersonal set idEstudio = ISNULL(@idEstudio, idEstudio), 
 	idPersonal = ISNULL(@idPersonal, idPersonal) where id = @id
 end
+go
 
 create procedure updateSolicitud
 @idSolicitud as int = null,
@@ -617,6 +612,7 @@ as begin
 	update Solicitud set idPersonal = ISNULL(@idPersonal, idPersonal), 
 	idCliente = ISNULL(@idCliente, idCliente) where idSolicitud = @idSolicitud
 end
+go
 
 create procedure updateContratacion
 @idContratacion as int = null,
@@ -649,6 +645,7 @@ as begin
 	update Contratacion set monto = ISNULL(@monto, monto), fecha = ISNULL(@fecha, fecha), 
 	idSolicitud = ISNULL(@idSolicitud, idSolicitud) where idContratacion = @idContratacion
 end
+go
 
 create procedure updateCategoriaXContratacion
 @id as int = null,
@@ -676,6 +673,7 @@ as begin
 	idCategoria = ISNULL(@idCategoria, idCategoria), 
 	idContratacion = ISNULL(@idContratacion, idContratacion) where id = @id
 end
+go
 
 create procedure updatePuesto
 @idPuesto as int = null,
@@ -710,6 +708,7 @@ as begin
 	update Puesto set nombre = ISNULL(@nombre, nombre), 
 	idPersonal = ISNULL(@idPersonal, idPersonal) where idPuesto = @idPuesto
 end
+go
 
 create procedure updatePago
 @idPago as int = null,
@@ -749,6 +748,7 @@ as begin
 	update Pago set fecha = ISNULL(@fecha, fecha), monto = ISNULL(@monto, monto), 
 	idPersonal = ISNULL(@idPersonal, idPersonal) where idPago = @idPago
 end
+go
 
 create procedure updateActividad
 @idActividad as tinyint = null,
@@ -769,6 +769,7 @@ as begin
 	update Actividad set descripcion = ISNULL(@descripcion, descripcion) 
 	where idActividad = @idActividad
 end
+go
 
 create procedure updateCorreo
 @idCorreo as int = null,
@@ -806,6 +807,7 @@ as begin
 	update Correo set direccion = ISNULL(@direccion, direccion), 
 	idUsuario = ISNULL(@idUsuario, idUsuario) where idCorreo = @idCorreo
 end
+go
 
 create procedure updateEnfermedad
 @idEnfermedad as smallint = null,
@@ -825,6 +827,7 @@ as begin
 	end
 	update Enfermedad set nombre = @nombre where idEnfermedad = @idEnfermedad
 end
+go
 
 create procedure updateTratamiento
 @idTratamiento as int,
@@ -867,8 +870,9 @@ as begin
 	end
 	update Tratamiento set nombre = ISNULL(@nombre, nombre), 
 	cantidad = ISNULL(@cantidad, cantidad), idEnfermedad = ISNULL(@idEnfermedad, idEnfermedad)
-	where idTratamiendo = @idTratamiento
+	where idTratamiento = @idTratamiento
 end
+go
 
 create procedure updateTratamientoXCliente
 @id as int,
@@ -886,6 +890,7 @@ as begin
 	update TratamientoXCliente set idTratamiento = ISNULL(@idTratamiento, idTratamiento),
 	idCliente = ISNULL(@idCliente, idCliente) where id = @id
 end
+go
 
 create procedure updateTipoServicio
 @idTipo as smallint = null,
@@ -903,8 +908,9 @@ as begin
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end
-	update TipoServicio set descripcion = @descripcion where idTipo = @idTipo
+	update TipoServicio set descripcion = @descripcion where idServicio = @idTipo
 end
+go
 
 create procedure updateServicioXCentro
 @id as int,
@@ -926,6 +932,7 @@ as begin
 	update ServicioXCentro set idServicio = ISNULL(@idServicio, idServicio), 
 	idCentro = ISNULL(@idCentro, idCentro) where id = @id
 end
+go
 
 create procedure updateEnfermedadXCliente
 @id as int,
@@ -951,5 +958,4 @@ as begin
 	update EnfermedadXCliente set idEnfermedad = ISNULL(@idEnfermedad, idEnfermedad),
 	idCliente = ISNULL(@idCliente, idCliente) where id = @id
 end
-
-use RedDeCuido
+go
