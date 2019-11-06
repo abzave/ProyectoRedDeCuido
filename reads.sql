@@ -312,17 +312,17 @@ go
 
 create procedure readUsuario
 @idUsuario as int = null,
-@contrasenia as varchar(30),
+@nombre as varchar(75) = null,
 @idTipo as int = null,
 @tipo as varchar(30) = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idUsuario is null and @contrasenia is null and @idTipo is null or @tipo is null begin
+	if @idUsuario is null and @nombre is null and @idTipo is null or @tipo is null begin
 		set @errorMessage = 'Debe ingresar al menos un parametro';
 		raiserror(@errorMessage, 1, 6);
 		return;
-	end else if @contrasenia = '' begin
-		set @errorMessage = 'La contraseña no puede estar vacia';
+	end else if @nombre = '' begin
+		set @errorMessage = 'El nombre no puede estar vacia';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end else if @idTipo is not null and @idTipo < 0 begin
@@ -342,21 +342,20 @@ as begin
 		return;
 	end
 	select * from Usuario where (@idUsuario is null or idUsuario = @idUsuario) and 
-	(@contrasenia is null or contrasenia = @contrasenia) and (@idTipo is null or idTipo = @idTipo)
+	(@nombre is null or nombre = @nombre) and (@idTipo is null or idTipo = @idTipo)
 end
 go
 
 create procedure readCliente
 @idCliente as int = null,
-@nombre as varchar(30) = null,
-@apellido as varchar(30) = null,
 @idProvincia as tinyint = null,
 @provincia as varchar(20) = null,
 @idUsuario as int = null,
+@baneado as bit = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idCliente is null and @nombre is null and @apellido is null and @idProvincia is null 
-			and @provincia is null and @idUsuario is null begin
+	if @idCliente is null  and @idProvincia is null and @provincia is null and @idUsuario is null 
+			and @baneado is null begin
 		set @errorMessage = 'Debe ingresar al menos un parametro';
 		raiserror(@errorMessage, 1, 6);
 		return;
@@ -364,20 +363,12 @@ as begin
 		execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
 	end
 	if @errorMessage is not null begin return; end
-	if @apellido = '' begin
-		set @errorMessage = 'El apellido no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idUsuario is not null and @idUsuario < 0 begin
+	if @idUsuario is not null and @idUsuario < 0 begin
 		set @errorMessage = 'El id debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end else if @idCliente is not null and @idCliente < 0 begin
 		set @errorMessage = 'El id debe ser positivo';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @nombre = '' begin
-		set @errorMessage = 'El nombre no puede estar vacio';
 		raiserror(@errorMessage, 1, 4);
 		return;
 	end else if @provincia = '' begin
@@ -396,40 +387,29 @@ as begin
 		return;
 	end
 	select * from Cliente where (@idCliente is null or idCliente = @idCliente) and 
-	(@nombre is null or nombre = @nombre) and (@apellido is null or apellido = @apellido) and
 	(@idProvincia is null or idProvincia = @idProvincia) and 
-	(@idUsuario is null or idUsuario = @idUsuario)
+	(@idUsuario is null or idUsuario = @idUsuario) and baneado = ISNULL(@baneado, baneado)
 end
 go
 
 create procedure readPersonal
 @idPersonal as int = null,
-@nombre as varchar(30) = null,
-@apellido as varchar(30) = null,
 @idCentro as smallint = null,
 @nombreCentro as varchar(30) = null,
 @idHorario as int = null,
 @tiempo as varchar(20) = null,
 @idUsuario as int = null,
+@disponible as bit = null,
 @errorMessage as varchar(50) = null out
 as begin
-	if @idPersonal is null and @nombre is null and @apellido is null and @idCentro is null and 
-			@nombreCentro is null and @idHorario is null and @tiempo is null and 
-			@idUsuario is null begin
+	if @idPersonal is null and @idCentro is null and @nombreCentro is null and @idHorario is null
+			and @tiempo is null and @idUsuario is null and @disponible is null begin
 		set @errorMessage = 'Debe ingresar al menos un parametro';
 		raiserror(@errorMessage, 1, 6);
 		return;
 	end
 	if @errorMessage is not null begin return; end
-	if @nombre = '' begin
-		set @errorMessage = 'El nombre no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @apellido = '' begin
-		set @errorMessage = 'El apellido no puede estar vacio';
-		raiserror(@errorMessage, 1, 4);
-		return;
-	end else if @idCentro is not null and @idCentro < 0 begin
+	if @idCentro is not null and @idCentro < 0 begin
 		set @errorMessage = 'El id debe ser positivo';
 		raiserror(@errorMessage, 1, 4);
 		return;
@@ -471,9 +451,9 @@ as begin
 		return;
 	end
 	select * from Personal where (@idPersonal is null or idPersonal = @idPersonal) and 
-	(@nombre is null or nombre = @nombre) and (@apellido is null or apellido = @apellido) and
 	(@idCentro is null or idCentro = @idCentro) and (@idHorario is null or idHorario = @idHorario)
-	and (@idUsuario is null or idUsuario = @idUsuario)
+	and (@idUsuario is null or idUsuario = @idUsuario) and 
+	disponible = ISNULL(@disponible, disponible)
 end
 go
 

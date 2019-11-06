@@ -1,5 +1,117 @@
 use RedDeCuido
 
+create procedure banearCliente
+@idCliente as int,
+@nombreCliente as varchar(75),
+@errorMessage as varchar(50) out
+as begin
+	if @idCliente is null and @nombreCliente is null begin
+		set @errorMessage = 'Debe ingresar al menos un parametro';
+		raiserror(@errorMessage, 1, 6);
+		return;
+	end else if @idCliente is not null and @idCliente < 0 begin
+		set @errorMessage = 'La puntuacion no puede ser negativa';
+		raiserror(@errorMessage, 1, 4);
+		return;
+	end else if @nombreCliente = '' begin
+		set @errorMessage = 'El nombre no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+		return;
+	end else if not exists (select idCliente = @idCliente from Cliente inner join Usuario on 
+			Usuario.idUsuario = Cliente.idUsuario where idCliente = ISNULL(@idCliente, idCliente) 
+			and Usuario.nombre = ISNULL(@nombreCliente, Usuario.nombre)) begin
+		set @errorMessage = 'El cliente dado no existe';
+		raiserror(@errorMessage, 2, 2);
+		return;
+	end
+	execute updateCliente @idCliente, @baneado = 1;
+end
+go
+
+create procedure desbanearCliente
+@idCliente as int,
+@nombreCliente as varchar(75),
+@errorMessage as varchar(50) out
+as begin
+	if @idCliente is null and @nombreCliente is null begin
+		set @errorMessage = 'Debe ingresar al menos un parametro';
+		raiserror(@errorMessage, 1, 6);
+		return;
+	end else if @idCliente is not null and @idCliente < 0 begin
+		set @errorMessage = 'La puntuacion no puede ser negativa';
+		raiserror(@errorMessage, 1, 4);
+		return;
+	end else if @nombreCliente = '' begin
+		set @errorMessage = 'El nombre no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+		return;
+	end else if not exists (select idCliente = @idCliente from Cliente inner join Usuario on 
+			Usuario.idUsuario = Cliente.idUsuario where idCliente = ISNULL(@idCliente, idCliente) 
+			and Usuario.nombre = ISNULL(@nombreCliente, Usuario.nombre)) begin
+		set @errorMessage = 'El cliente dado no existe';
+		raiserror(@errorMessage, 2, 2);
+		return;
+	end
+	execute updateCliente @idCliente, @baneado = 0;
+end
+go
+
+create procedure ocuparPersonal
+@idPersonal as int = null,
+@nombreEmpleado as varchar(75) = null,
+@errorMessage as varchar(50) = null out
+as begin
+	if @idPersonal is null and @nombreEmpleado is null begin
+		set @errorMessage = 'Debe ingresar al menos un parametro';
+		raiserror(@errorMessage, 1, 6);
+		return;
+	end else if @idPersonal is not null and @idPersonal < 0 begin
+		set @errorMessage = 'La puntuacion no puede ser negativa';
+		raiserror(@errorMessage, 1, 4);
+		return;
+	end else if @nombreEmpleado = '' begin
+		set @errorMessage = 'El nombre no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+		return;
+	end else if not exists (select idPersonal = @idPersonal from Personal inner join Usuario on 
+			Usuario.idUsuario = Personal.idUsuario where idPersonal = ISNULL(@idPersonal, idPersonal) 
+			and Usuario.nombre = ISNULL(@nombreEmpleado, Usuario.nombre)) begin
+		set @errorMessage = 'El empleado dado no existe';
+		raiserror(@errorMessage, 2, 2);
+		return;
+	end
+	execute updatePersonal @idPersonal, @disponibilidad = 0;
+end
+go
+
+create procedure liberarPersonal
+@idPersonal as int = null,
+@nombreEmpleado as varchar(75) = null,
+@errorMessage as varchar(50) = null out
+as begin
+	if @idPersonal is null and @nombreEmpleado is null begin
+		set @errorMessage = 'Debe ingresar al menos un parametro';
+		raiserror(@errorMessage, 1, 6);
+		return;
+	end else if @idPersonal is not null and @idPersonal < 0 begin
+		set @errorMessage = 'La puntuacion no puede ser negativa';
+		raiserror(@errorMessage, 1, 4);
+		return;
+	end else if @nombreEmpleado = '' begin
+		set @errorMessage = 'El nombre no puede estar vacio';
+		raiserror(@errorMessage, 1, 2);
+		return;
+	end else if not exists (select idPersonal = @idPersonal from Personal inner join Usuario on 
+			Usuario.idUsuario = Personal.idUsuario where idPersonal = ISNULL(@idPersonal, idPersonal) 
+			and Usuario.nombre = ISNULL(@nombreEmpleado, Usuario.nombre)) begin
+		set @errorMessage = 'El empleado dado no existe';
+		raiserror(@errorMessage, 2, 2);
+		return;
+	end
+	execute updatePersonal @idPersonal, @disponibilidad = 1;
+end
+go
+
 create function facturar
 (@monto as money,
 @idSolicitud as int)
@@ -8,11 +120,15 @@ as begin
 	declare @currentDate as datetime = GETDATE();
 	declare @errorMessage as varchar(50) = null;
 	declare @idContratacion as int = null;
+	declare @idPersonal as int = null;
 	execute createContratacion @monto, @currentDate, @idSolicitud, @errorMessage out, 
 								@idContratacion out;
 	if @errorMessage is not null begin return -1; end
+	set @idPersonal = (select idPersonal from Solicitud where idSolicitud = @idSolicitud)
+	execute ocuparPersonal @idPersonal;
 	return @idContratacion;
 end
+go
 
 create procedure evaluarCliente
 @puntuacion as tinyint,
@@ -22,6 +138,7 @@ as begin
 	declare @idComentario as int = null;
 	declare @idCalificacion as int = null;
 	declare @promedio as tinyint = null;
+	declare @calificaciones as int = null;
 	declare @errorMessage as varchar(50) = null;
 	execute createComentario @comentario, @errorMessage out, @idComentario out;
 	if @errorMessage is  not null begin return; end
@@ -30,14 +147,15 @@ as begin
 	if @errorMessage is not null begin return; end
 	execute createCalificacionXCliente @idCliente, @idCalificacion, @errorMessage;
 	if @errorMessage is not null begin return; end
-	select @promedio = AVG(puntuacion) from Calificacion 
+	select @promedio = AVG(puntuacion), @calificaciones = COUNT(puntuacion) from Calificacion 
 	inner join ClienteXCalificacion	on 
 	ClienteXCalificacion.idCalificacion = Calificacion.idCalificacion 
 	having ClienteXCalificacion.idCliente = @idCliente
-	if @promedio < 7 begin
-		print('No puede solicitar servicio')
+	if @promedio < 7 and @calificaciones > 5 begin
+		execute banearCliente @idCliente;
 	end
 end
+go
 
 create procedure reporteServicios
 @idTipo as smallint = null,
@@ -143,6 +261,7 @@ as begin
 	CentroDeAtencion.idCentro = ISNULL(@idCentro, CentroDeAtencion.idCentro) and
 	Contratacion.fecha between @fechaInicio and @fechaFin group by monto
 end
+go
 
 create procedure mejoresCuidadores
 @idCategoria as smallint = null,
@@ -203,6 +322,7 @@ as begin
 	group by Calificacion.puntuacion, Personal.nombre, Categoria.descripcion, 
 	CentroDeAtencion.nombre, Contratacion.monto, Pago.monto order by puntuacion desc
 end
+go
 
 create procedure peoresCuidadores
 @idCategoria as smallint = null,
@@ -263,3 +383,4 @@ as begin
 	group by Calificacion.puntuacion, Personal.nombre, Categoria.descripcion, 
 	CentroDeAtencion.nombre, Contratacion.monto, Pago.monto order by puntuacion asc
 end
+go

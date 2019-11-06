@@ -77,28 +77,24 @@ create table TipoUsuario(
 
 create table Usuario(
 	idUsuario int primary key not null IDENTITY(0, 1),
-	contrasenia varchar(30) not null,
+	nombre varchar(75) not null,
 	idTipo int foreign key references TipoUsuario not null,
-	check(contrasenia != '')
+	check(nombre != '')
 )
 
 create table Cliente(
 	idCliente int primary key not null IDENTITY(0, 1),
-	nombre varchar(30) not null,
-	apellido varchar(30) not null,
+	baneado bit not null default 0,
 	idProvincia tinyint foreign key references Provincia not null,
 	idUsuario int foreign key references Usuario not null,
-	check(nombre != '' and apellido != '')
 )
 
 create table Personal(
 	idPersonal int primary key not null IDENTITY(0, 1),
-	nombre varchar(30) not null,
-	apellido varchar(30) not null,
+	disponible bit not null default 0,
 	idCentro smallint foreign key references CentroDeAtencion not null,
 	idHorario int foreign key references Horario not null,
 	idUsuario int foreign key references Usuario not null,
-	check(nombre != '' and apellido != '')
 )
 
 create table CalificacionXCliente(
