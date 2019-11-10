@@ -141,12 +141,15 @@ create procedure getProvincia
 @provincia as varchar(50),
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idProvincia = @idProvincia from Provincia where 
+	if not exists (select idProvincia from Provincia where 
 			(@idProvincia is null or idProvincia = @idProvincia) 
 			and (@provincia is null or nombre = @provincia)) begin
 		set @errorMessage = 2;
 		raiserror('La provincia dado no existe', 2, 2);
 	end
+	if @idProvincia is null begin
+		select @idProvincia = idProvincia from Provincia where nombre = @provincia
+	end	
 	return @errorMessage;
 end
 go
@@ -253,12 +256,15 @@ create procedure getComentario
 @comentario as varchar(30),
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idComentario = @idComentario from Comentario where 
+	if not exists (select idComentario from Comentario where 
 			(@idComentario is null or idComentario = @idComentario) and 
 			(@comentario is null or contenido = @comentario)) begin
 		set @errorMessage = 2;
 		raiserror('El comentario dado no existe', 2, 2);
 	end
+	if @idComentario is null begin
+		select @idComentario = idComentario from Comentario where contenido = @comentario
+	end	
 	return @errorMessage;
 end
 go
@@ -341,11 +347,14 @@ create procedure getDia
 @dia as varchar(10) = null,
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idDia = @idDia from Dia where (@idDia is null or idDia = @idDia) 
+	if not exists (select idDia from Dia where (@idDia is null or idDia = @idDia) 
 			and (@dia is null or nombre = @dia)) begin
 		set @errorMessage = 2;
 		raiserror('El dia dado no existe', 2, 2);
 	end
+	if @idDia is null begin
+		select @idDia = idDia from Dia where nombre = @dia
+	end	
 	return @errorMessage;
 end
 go
@@ -427,11 +436,14 @@ create procedure getTipoUsuario
 @tipo as varchar(30) = null,
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idTipo = @idTipo from TipoUsuario where 
+	if not exists (select idTipo from TipoUsuario where 
 			(@idTipo is null or idTipo = @idTipo) and (@tipo is null and tipo = @tipo)) begin
 		set @errorMessage = 2;
 		raiserror('El tipo dado no existe', 2, 2);
 	end
+	if @idTipo is null begin
+		select @idTipo = idTipo from TipoUsuario where tipo = @tipo
+	end	
 	return @errorMessage;
 end
 go
@@ -441,12 +453,15 @@ create procedure getUsuario
 @nombre as varchar(75),
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idUsuario = @idUsuario from Usuario
+	if not exists (select idUsuario from Usuario
 			where idUsuario = ISNULL(@idUsuario, idUsuario) and 
 			nombre = ISNULL(@nombre, nombre)) begin
 		set @errorMessage = 2;
 		raiserror('El usuario dado no existe', 2, 2);
 	end 
+	if @idUsuario is null begin
+		select @idUsuario = idUsuario from Usuario where nombre = @nombre
+	end	
 	return @errorMessage;
 end
 go
@@ -510,12 +525,15 @@ create procedure getCentro
 @nombreCentro as varchar(30) = null,
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idCentro = @idCentro from CentroDeAtencion where 
+	if not exists (select idCentro from CentroDeAtencion where 
 			(@idCentro is null or idCentro = @idCentro) and 
 			(@nombreCentro is null and nombre = @nombreCentro)) begin
 		set @errorMessage = 2;
 		raiserror('El horario dado no existe', 2, 2);
 	end 
+	if @idCentro is null begin
+		select @idCentro = idCentro from CentroDeAtencion where nombre = @nombreCentro
+	end	
 	return @errorMessage;
 end
 go
@@ -525,14 +543,17 @@ create procedure getHorario
 @tiempo as varchar(20) = null,
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idHorario = @idHorario from Horario where 
+	if not exists (select idHorario from Horario where 
 			(@idHorario is null or idHorario = @idHorario) and 
 			(@tiempo is null and tiempo = @tiempo)) begin
 		set @errorMessage = 2;
 		raiserror('El horario dado no existe', 2, 2);
 	end
+	if @idHorario is null begin
+		select @idHorario = idHorario from Horario where tiempo = @tiempo
+	end	
 	return @errorMessage;
-end
+	end
 go
 
 create procedure existePersonal
@@ -664,14 +685,17 @@ create procedure getPersonal
 @nombrePersonal as varchar(75) = null,
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idPersonal = @idPersonal from Personal inner join Usuario on 
+	if not exists (select idPersonal from Personal inner join Usuario on 
 			Usuario.idUsuario = Personal.idUsuario where (@idPersonal is null or 
 			idPersonal = @idPersonal) and (@nombrePersonal is null and 
 			Usuario.nombre = @nombrePersonal)) begin
 		set @errorMessage = 2;
 		raiserror('El empleado dado no existe', 2, 2);
 	end 
-	return @errorMessage;
+	if @idPersonal is null begin
+		select @idPersonal = idPersonal from Personal inner join Usuario on
+		Usuario.idUsuario = Personal.idUsuario where Usuario.nombre = @nombrePersonal
+	end	return @errorMessage;
 end
 go
 
@@ -680,13 +704,16 @@ create procedure getCliente
 @nombreCliente as varchar(75) = null,
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idCliente = @idCliente from Cliente inner join Usuario on 
+	if not exists (select idCliente from Cliente inner join Usuario on 
 			Usuario.idUsuario = Cliente.idUsuario where (@idCliente is null or 
 			idCliente = @idCliente) and (@nombreCliente is null and nombre = @nombreCliente)) begin
 		set @errorMessage = 2;
 		raiserror('El cliente dado no existe', 2, 2);
 	end 
-	return @errorMessage;
+	if @idCliente is null begin
+		select @idCliente = idCliente from Cliente inner join Usuario on 
+		Usuario.idUsuario = Cliente.idUsuario where Usuario.nombre = @nombreCliente
+	end	return @errorMessage;
 end
 go
 
@@ -741,12 +768,11 @@ create procedure getSolicitud
 @idSolicitud as int = null out,
 @errorMessage as tinyint = 0
 as begin
-	if not exists (select idSolicitud = @idSolicitud from Solicitud where idSolicitud = @idSolicitud)
+	if not exists (select idSolicitud from Solicitud where idSolicitud = @idSolicitud)
 			begin
 		set @errorMessage = 2;
 		raiserror('La solicitud dada no existe', 2, 2);
 	end
-	return @errorMessage;
 end
 go
 
@@ -1316,7 +1342,7 @@ as begin
 		raiserror('El nombre no puede estar vacio', 1, 4);
 		return;
 	end
-	if not exists (select idUsuario = @idUsuario from Usuario  where 
+	if not exists (select idUsuario from Usuario  where 
 			(@idUsuario is null or Usuario.idUsuario = @idUsuario) and 
 			(@nombreUsuario is null or nombre = @nombreUsuario)) begin
 		set @errorMessage = 2;
@@ -1327,6 +1353,9 @@ as begin
 		raiserror('Este correo ya está registrado', 2, 1);
 		return;
 	end
+	if @idUsuario is null begin
+		select @idUsuario = idUsuario from Usuario where nombre = @nombreUsuario
+	end	
 	begin transaction 
 	insert into Correo(direccion, idUsuario) values (@direccion, @idUsuario)
 	select @idCorreo = @@IDENTITY
@@ -1384,7 +1413,7 @@ as begin
 		raiserror('El nombre no puede estar vacio', 1, 4);
 		return;
 	end
-	if not exists (select idEnfermedad = @idEnfermedad from Enfermedad  where 
+	if not exists (select idEnfermedad from Enfermedad  where 
 			(@idEnfermedad is null or idEnfermedad = @idEnfermedad) and 
 			(@nombreEnfermedad is null or nombre = @nombreEnfermedad)) begin
 		set @errorMessage = 2;
@@ -1396,6 +1425,9 @@ as begin
 		raiserror('Este tratamiento ya se encuentra registrado', 2, 1);
 		return;
 	end
+	if @idEnfermedad is null begin
+		select @idEnfermedad = idEnfermedad from Enfermedad where nombre = @nombreEnfermedad
+	end	
 	begin transaction 
 	insert into Tratamiento(nombre, cantidad, idEnfermedad) values (@nombre, @cantidad, @idEnfermedad)
 	select @idTratamiento = @@IDENTITY
