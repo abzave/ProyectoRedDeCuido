@@ -147,7 +147,7 @@ as begin
 		set @errorMessage = 2;
 		raiserror('La provincia dado no existe', 2, 2);
 	end
-	if @idProvincia is null begin
+	if @idProvincia is null and @errorMessage = 0 begin
 		select @idProvincia = idProvincia from Provincia where nombre = @provincia
 	end	
 	return @errorMessage;
@@ -175,6 +175,7 @@ as begin
 		raiserror('Este nombre ya se encuentra registrado', 2, 1);
 		return;
 	end
+	return @errorMessage;
 end
 go
 
@@ -285,7 +286,7 @@ end
 go
 
 create procedure existeHorario
-@tiempo as tinyint,
+@tiempo as varchar(30),
 @errorMessage as tinyint = 0
 as begin
 	if exists (select @@ERROR from Horario where tiempo = @tiempo) begin
@@ -315,9 +316,6 @@ as begin
 	if @hora is null begin
 		set @errorMessage = 1;
 		raiserror('La hora no puede ser nula', 1, 1);
-	end else if @hora < CONVERT(time, GETDATE()) begin
-		set @errorMessage = 7;
-		raiserror('La hora no puede mayor al dia actual', 1, 7);
 	end
 	return @errorMessage;
 end
@@ -343,7 +341,7 @@ end
 go
 
 create procedure getDia
-@idDia as tinyint = null,
+@idDia as tinyint = null out,
 @dia as varchar(10) = null,
 @errorMessage as tinyint = 0
 as begin
@@ -437,7 +435,7 @@ create procedure getTipoUsuario
 @errorMessage as tinyint = 0
 as begin
 	if not exists (select idTipo from TipoUsuario where 
-			(@idTipo is null or idTipo = @idTipo) and (@tipo is null and tipo = @tipo)) begin
+			(@idTipo is null or idTipo = @idTipo) and (@tipo is null or tipo = @tipo)) begin
 		set @errorMessage = 2;
 		raiserror('El tipo dado no existe', 2, 2);
 	end
@@ -527,9 +525,9 @@ create procedure getCentro
 as begin
 	if not exists (select idCentro from CentroDeAtencion where 
 			(@idCentro is null or idCentro = @idCentro) and 
-			(@nombreCentro is null and nombre = @nombreCentro)) begin
+			(@nombreCentro is null or nombre = @nombreCentro)) begin
 		set @errorMessage = 2;
-		raiserror('El horario dado no existe', 2, 2);
+		raiserror('El centro dado no existe', 2, 2);
 	end 
 	if @idCentro is null begin
 		select @idCentro = idCentro from CentroDeAtencion where nombre = @nombreCentro
@@ -545,7 +543,7 @@ create procedure getHorario
 as begin
 	if not exists (select idHorario from Horario where 
 			(@idHorario is null or idHorario = @idHorario) and 
-			(@tiempo is null and tiempo = @tiempo)) begin
+			(@tiempo is null or tiempo = @tiempo)) begin
 		set @errorMessage = 2;
 		raiserror('El horario dado no existe', 2, 2);
 	end
@@ -687,7 +685,7 @@ create procedure getPersonal
 as begin
 	if not exists (select idPersonal from Personal inner join Usuario on 
 			Usuario.idUsuario = Personal.idUsuario where (@idPersonal is null or 
-			idPersonal = @idPersonal) and (@nombrePersonal is null and 
+			idPersonal = @idPersonal) and (@nombrePersonal is null or 
 			Usuario.nombre = @nombrePersonal)) begin
 		set @errorMessage = 2;
 		raiserror('El empleado dado no existe', 2, 2);
@@ -706,7 +704,7 @@ create procedure getCliente
 as begin
 	if not exists (select idCliente from Cliente inner join Usuario on 
 			Usuario.idUsuario = Cliente.idUsuario where (@idCliente is null or 
-			idCliente = @idCliente) and (@nombreCliente is null and nombre = @nombreCliente)) begin
+			idCliente = @idCliente) and (@nombreCliente is null or nombre = @nombreCliente)) begin
 		set @errorMessage = 2;
 		raiserror('El cliente dado no existe', 2, 2);
 	end 
@@ -995,7 +993,7 @@ as begin
 	execute @errorMessage = validarHora @horaInicio;
 	execute @errorMessage = validarHora @horaFin, @errorMessage;
 	execute @errorMessage = validarDiaOIdDia @idDia, @dia, @errorMessage;
-	execute @errorMessage = getDia @idDia, @dia, @errorMessage;
+	execute @errorMessage = getDia @idDia out, @dia, @errorMessage;
 	execute @errorMessage = existeJornada @horaInicio, @horaFin, @errorMessage;
 	if @errorMessage != 0 begin return; end
 	begin transaction 
@@ -1048,6 +1046,11 @@ as begin
 	execute @errorMessage = validarTipoOIdTipo @idTipo, @tipo, @errorMessage;
 	execute @errorMessage = getTipoUsuario @idTipo out, @tipo, @errorMessage;
 	if @errorMessage != 0 begin return; end
+	if exists(select @@ERROR from Usuario where nombre = @nombre and idTipo = @idTipo) begin
+		set @errorMessage = 8;
+		raiserror('Este usuario ya se encuentra registrado', 2, 1);
+		return;
+	end
 	begin transaction 
 	insert into Usuario(nombre, idTipo) values (@nombre, @idTipo)
 	select @idUsuario = @@IDENTITY
@@ -1056,18 +1059,16 @@ end
 go
 
 create procedure createCliente
-@nombre as varchar(75),
+@nombre as varchar(75) = null,
 @idProvincia as tinyint = null,
 @provincia as varchar(20) = null,
-@idUsuario as int,
+@idUsuario as int = null,
 @errorMessage as tinyint = 0 out,
 @idCliente as int = null out
 as begin
-	execute @errorMessage = validarNombre @nombre;
 	execute @errorMessage = validarProvinciaOIdProvincia @idProvincia, @provincia, @errorMessage;
 	execute @errorMessage = getProvincia @idProvincia out, @provincia, @errorMessage;
-	execute @errorMessage = validarIntId @idUsuario, @errorMessage;
-	execute @errorMessage = getUsuario @idUsuario out, @errorMessage;
+	execute @errorMessage = getUsuario @idUsuario out, @nombre, @errorMessage;
 	execute @errorMessage = existeCliente @nombre, @idProvincia, @idUsuario, @errorMessage;
 	if @errorMessage != 0 begin return; end
 	begin transaction 
@@ -1078,22 +1079,20 @@ end
 go
 
 create procedure createPersonal
-@nombre as varchar(75),
+@nombre as varchar(75) = null,
 @idCentro as smallint = null,
 @nombreCentro as varchar(30) = null,
 @idHorario as int = null,
 @tiempo as varchar(20) = null,
-@idUsuario as int,
+@idUsuario as int = null,
 @errorMessage as tinyint = 0 out,
 @idPersonal as int = null out
 as begin
-	execute @errorMessage = validarNombre @nombre;
-	execute @errorMessage = validarIntId @idUsuario, @errorMessage;
 	execute @errorMessage = validarCentroOIdCentro @idCentro, @nombreCentro, @errorMessage;
 	execute @errorMessage = validarTiempoOIdHorario @idHorario, @tiempo, @errorMessage;
 	execute @errorMessage = getCentro @idCentro out, @nombreCentro, @errorMessage;
 	execute @errorMessage = getHorario @idHorario out, @tiempo, @errorMessage;
-	execute @errorMessage = getUsuario @idUsuario out, @errorMessage;
+	execute @errorMessage = getUsuario @idUsuario out, @nombre, @errorMessage;
 	execute @errorMessage = existePersonal @nombre, @idCentro, @idHorario, @idUsuario, 
 											@errorMessage;
 	if @errorMessage != 0 begin return; end
@@ -1198,8 +1197,8 @@ create procedure createSolicitud
 as begin
 	execute @errorMessage = validarPersonalOIdPersonal @idPersonal, @nombrePersonal;
 	execute @errorMessage = validarClienteOIdCliente @idCliente, @nombreCliente, @errorMessage;
-	execute @errorMessage = getPersonal @idPersonal, @nombrePersonal, @errorMessage;
-	execute @errorMessage = getCliente @idCliente, @nombreCliente, @errorMessage;
+	execute @errorMessage = getPersonal @idPersonal out, @nombrePersonal, @errorMessage;
+	execute @errorMessage = getCliente @idCliente out, @nombreCliente, @errorMessage;
 	execute @errorMessage = existeSolicitud @idPersonal, @idCliente, @errorMessage;
 	if @errorMessage != 0 begin return; end
 	begin transaction 

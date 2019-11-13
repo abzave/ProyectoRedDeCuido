@@ -132,7 +132,7 @@ go
 
 create procedure readCalificacion
 @idCalificacion as int = null,
-@puntuacion as tinyint,
+@puntuacion as tinyint = null,
 @idComentario as tinyint = null,
 @comentario as varchar(30) = null,
 @errorMessage as tinyint = 0 out
@@ -190,7 +190,7 @@ go
 
 create procedure readDia
 @idDia as tinyint = null,
-@nombre as varchar(10),
+@nombre as varchar(10) = null,
 @errorMessage as tinyint = 0 out
 as begin
 	if @idDia is null and @nombre is null begin
@@ -289,7 +289,7 @@ go
 
 create procedure readTipoUsuario
 @idTipo as int = null,
-@tipo as varchar(30),
+@tipo as varchar(30) = null,
 @errorMessage as tinyint = 0 out
 as begin
 	if @idTipo is null and @tipo is null begin
@@ -631,16 +631,17 @@ as begin
 		return;
 	end
 	if (@idPersonal is not null or @nombrePersonal is not null) and not exists 
-			(select idPersonal = @idPersonal from Personal where 
-			(@idPersonal is null or idPersonal = @idPersonal) and 
-			(@nombrePersonal is null and nombre = @nombrePersonal)) begin
+			(select idPersonal = @idPersonal from Personal inner join Usuario on 
+			Usuario.idUsuario = Personal.idUsuario where (@idPersonal is null or 
+			idPersonal = @idPersonal) and (@nombrePersonal is null and nombre = @nombrePersonal)) 
+			begin
 		set @errorMessage = 2;
 		raiserror('El empleado dado no existe', 2, 2);
 		return;
 	end else if (@idCliente is not null or @nombreCliente is not null) and not exists 
-			(select idCliente = @idCliente from Cliente where
-			(@idCliente is null or idCliente = @idCliente) and 
-			(@nombreCliente is null and nombre = @nombreCliente)) begin
+			(select idCliente = @idCliente from Cliente inner join Usuario on 
+			Usuario.idUsuario = Cliente.idUsuario where (@idCliente is null or 
+			idCliente = @idCliente) and (@nombreCliente is null and nombre = @nombreCliente)) begin
 		set @errorMessage = 2;
 		raiserror('El cliente dado no existe', 2, 2);
 		return;
@@ -752,9 +753,10 @@ as begin
 		return;
 	end
 	if (@idPersonal is not null or @nombrePersonal is not null) and not exists 
-			(select idPersonal = @idPersonal from Personal where 
-			(@idPersonal is null or idPersonal = @idPersonal) and 
-			(@nombrePersonal is null or nombre = @nombrePersonal)) begin
+			(select idPersonal = @idPersonal from Personal inner join Usuario on 
+			Usuario.idUsuario = Personal.idUsuario where (@idPersonal is null or 
+			idPersonal = @idPersonal) and (@nombrePersonal is null or nombre = @nombrePersonal))
+			begin
 		set @errorMessage = 2;
 		raiserror('El empleado dado no existe', 2, 2);
 		return;
@@ -800,9 +802,10 @@ as begin
 		return;
 	end
 	if (@idPersonal is not null or @nombrePersonal is not null) and not exists 
-			(select idPersonal = @idPersonal from Personal where 
-			(@idPersonal is null or idPersonal = @idPersonal) and 
-			(@nombrePersonal is null or nombre = @nombrePersonal)) begin
+			(select idPersonal = @idPersonal from Personal inner join Usuario on 
+			Usuario.idUsuario = Personal.idUsuario where (@idPersonal is null or 
+			idPersonal = @idPersonal) and (@nombrePersonal is null or nombre = @nombrePersonal)) 
+			begin
 		set @errorMessage = 2;
 		raiserror('El empleado dado no existe', 2, 2);
 		return;
@@ -867,9 +870,9 @@ as begin
 		raiserror('El id del correo no puede ser negativo', 1, 4);
 		return;
 	end
-	if not exists (select idUsuario = @idUsuario from Usuario  where 
+	if not exists (select idUsuario = @idUsuario from Usuario where 
 			(@idUsuario is null or Usuario.idUsuario = @idUsuario) and 
-			(@nombreUsuario is null or contrasenia = @nombreUsuario)) begin
+			(@nombreUsuario is null or nombre = @nombreUsuario)) begin
 		set @errorMessage = 2;
 		raiserror('El usuario dado no existe', 2, 2);
 		return;
